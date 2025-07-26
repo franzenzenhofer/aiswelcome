@@ -17,6 +17,9 @@ export interface Env {
   ENVIRONMENT: string;
 }
 
+// Export Durable Object
+export { RateLimiter } from './durable-objects/rate-limiter';
+
 // In-memory storage for stories (temporary until D1 is fully integrated)
 const stories = new Map<number, any>();
 let storyIdCounter = 1;

@@ -1,11 +1,34 @@
 name = "aiswelcome"
-main = "apps/worker/src/index-production.ts"
+main = "apps/worker/src/index-authenticated.ts"
 compatibility_date = "2025-07-26"
+node_compat = true
 
 # Routes
 [[routes]]
 pattern = "aiswelcome.franzai.com/*"
 zone_name = "franzai.com"
+
+# D1 Database (will be created on first deploy)
+[[d1_databases]]
+binding = "DB"
+database_name = "aiswelcome-prod"
+database_id = "WILL_BE_CREATED"
+
+# KV Namespaces
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "WILL_BE_CREATED"
+preview_id = "WILL_BE_CREATED"
+
+# Durable Objects
+[[durable_objects.bindings]]
+name = "RATE_LIMITER"
+class_name = "RateLimiter"
+script_name = "aiswelcome"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["RateLimiter"]
 
 # Environment Variables
 [vars]
