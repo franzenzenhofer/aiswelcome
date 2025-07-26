@@ -1,15 +1,11 @@
 name = "aiswelcome"
-main = "apps/worker/src/index-authenticated.ts"
+main = "apps/worker/src/index-production.ts"
 compatibility_date = "2025-07-26"
-compatibility_flags = ["nodejs_compat"]
 
 # Routes
 [[routes]]
 pattern = "aiswelcome.franzai.com/*"
 zone_name = "franzai.com"
-
-# Note: D1, KV, and Durable Objects will be added when created
-# For now, using in-memory storage
 
 # Environment Variables
 [vars]

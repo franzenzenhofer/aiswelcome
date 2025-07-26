@@ -1,8 +1,11 @@
 import { AuthService } from '../auth/service';
 import { AUTH_CONFIG, AUTH_ERRORS } from '../auth/constants';
-import { htmlTemplate } from '../templates/layout';
+import { htmlTemplate } from '../templates/html-layout';
 
 export async function handleLogin(request: Request, env: any): Promise<Response> {
+  if (!env.DB) {
+    return renderLoginPage('Database not configured yet');
+  }
   const authService = new AuthService(env.DB);
 
   if (request.method === 'GET') {

@@ -24,7 +24,7 @@ export interface Session {
 }
 
 export class AuthService {
-  constructor(private db: D1Database) {}
+  constructor(private db: D1Database | undefined) {}
 
   async register(username: string, password: string, email?: string): Promise<User> {
     // Validate username

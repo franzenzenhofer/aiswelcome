@@ -80,7 +80,7 @@ async function deploy() {
     log.section('Running Pre-Deploy Checks');
     
     // Check if wrangler is logged in
-    const wranglerUser = getOutput('wrangler whoami');
+    const wranglerUser = getOutput('wrangler whoami 2>&1');
     if (!wranglerUser || wranglerUser.includes('Not logged in')) {
       log.error('Wrangler is not authenticated. Please run: wrangler login');
       process.exit(1);
