@@ -8,6 +8,7 @@ import {
   getCurrentUser,
   getSessionFromRequest 
 } from './handlers/auth-handlers';
+import { handleMCPRequest } from './handlers/mcp-handler';
 import { htmlTemplate } from './templates/html-layout';
 
 export interface Env {
@@ -85,6 +86,11 @@ export default {
     
     if (url.pathname === '/user') {
       return handleUserProfile(request, env);
+    }
+    
+    // MCP Server endpoint
+    if (url.pathname === '/mcp' || url.pathname.startsWith('/mcp/')) {
+      return handleMCPRequest(request, env);
     }
     
     // API endpoints
