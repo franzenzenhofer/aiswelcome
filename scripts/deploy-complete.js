@@ -169,6 +169,19 @@ Co-Authored-By: Claude <noreply@anthropic.com>`;
       log.warning(`Tag v${version} already exists`);
     }
 
+    // Step 9: Push to GitHub
+    log.section('Pushing to GitHub');
+    
+    // Check if remote exists
+    const hasRemote = getOutput('git remote -v');
+    if (hasRemote && hasRemote.includes('origin')) {
+      exec('git push origin master --follow-tags');
+      log.success('Pushed to GitHub with tags');
+    } else {
+      log.warning('No git remote configured. Skipping GitHub push.');
+      log.info('To add GitHub remote: git remote add origin https://github.com/your-username/aiswelcome.git');
+    }
+
     // Final summary
     log.section('Deployment Complete! 🎉');
     console.log(`
