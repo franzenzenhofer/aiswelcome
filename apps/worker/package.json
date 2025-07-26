@@ -1,0 +1,27 @@
+{
+  "name": "@aiswelcome/worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc -b && cp -r src/templates dist/",
+    "dev": "wrangler dev --local",
+    "deploy": "wrangler deploy",
+    "lint": "eslint src --ext ts,tsx --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@aiswelcome/shared": "workspace:*",
+    "@aiswelcome/logging": "workspace:*",
+    "hono": "^4.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.0.0",
+    "@types/node": "^20.14.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0",
+    "wrangler": "^3.0.0"
+  }
+}
