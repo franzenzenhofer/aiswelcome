@@ -112,7 +112,7 @@ async function deploy() {
     exec('wrangler deploy');
     log.success('Deployed to Cloudflare Workers');
 
-    // Step 5: Verify deployment
+    // Step 5: Verify deployment with comprehensive tests
     log.section('Verifying Deployment');
     const healthCheckUrl = 'https://aiswelcome.franzai.com/api/v1/health';
     log.info(`Checking health endpoint: ${healthCheckUrl}`);
@@ -131,6 +131,26 @@ async function deploy() {
       }
     } catch (error) {
       log.warning(`Could not verify deployment: ${error.message}`);
+    }
+
+    // Step 5b: Run comprehensive integration tests
+    log.section('Running Integration Tests');
+    log.info('Testing all routes, APIs, and functionality...');
+    
+    try {
+      // Make the test script executable
+      exec('chmod +x scripts/test-all-functionality.js', { ignoreError: true });
+      
+      // Run the comprehensive tests
+      exec('node scripts/test-all-functionality.js', {
+        stdio: 'inherit',
+        env: { ...process.env, TEST_URL: 'https://aiswelcome.franzai.com' }
+      });
+      log.success('All integration tests passed!');
+    } catch (error) {
+      log.error('Integration tests failed! Deployment may have issues.');
+      log.error('Run manually: npm run test:integration');
+      // Don't exit - deployment is done, just tests failed
     }
 
     // Step 6: Initialize git repo if needed

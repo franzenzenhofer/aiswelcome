@@ -138,6 +138,68 @@ export default {
       return handleUserProfile(request);
     }
 
+    // Comment submission
+    if (url.pathname === "/comment" && request.method === "POST") {
+      if (!currentUser) {
+        return Response.redirect(new URL("/login", url).toString(), 303);
+      }
+
+      const formData = await request.formData();
+      const storyId = parseInt(formData.get("story_id")?.toString() || "0");
+      const parentId = formData.get("parent_id")?.toString();
+      const text = formData.get("text")?.toString() || "";
+
+      if (!text.trim()) {
+        return Response.redirect(new URL(`/item?id=${storyId}`, url).toString(), 303);
+      }
+
+      // Check rate limit
+      const authService = new AuthService();
+      const canComment = await authService.checkRateLimit(currentUser.id, "comment");
+      if (!canComment) {
+        return new Response(
+          htmlTemplate(
+            `<h2>Rate Limit</h2>
+             <p>${AUTH_ERRORS.COMMENT_LIMIT_REACHED}</p>
+             <p><a href="/item?id=${storyId}">← back to story</a></p>`,
+            "Rate Limit | AISWelcome",
+            currentUser
+          ),
+          {
+            status: 429,
+            headers: { "Content-Type": "text/html" },
+          }
+        );
+      }
+
+      // Create comment using in-memory storage
+      const comment = {
+        id: Math.floor(Math.random() * 1000000),
+        user: currentUser.username,
+        user_id: currentUser.id,
+        story_id: storyId,
+        parent_id: parentId ? parseInt(parentId) : null,
+        text: text.trim(),
+        points: 1,
+        created_at: new Date().toISOString(),
+      };
+
+      // Add to story's comments
+      const story = stories.get(storyId);
+      if (story) {
+        if (!story.comments) story.comments = [];
+        story.comments.push(comment);
+        
+        // Increment rate limit
+        await authService.incrementRateLimit(currentUser.id, "comment");
+        
+        // Award karma
+        await authService.updateKarma(currentUser.id, 1);
+      }
+
+      return Response.redirect(new URL(`/item?id=${storyId}`, url).toString(), 303);
+    }
+
     // MCP Server endpoint
     if (url.pathname === "/mcp" || url.pathname.startsWith("/mcp/")) {
       return handleMCPRequest(request, env);
@@ -278,6 +340,98 @@ export default {
                 ...story,
                 voters: undefined,
               },
+            }),
+            { headers },
+          );
+        } catch (error) {
+          return new Response(
+            JSON.stringify({
+              ok: false,
+              error: "Invalid request",
+            }),
+            { status: 400, headers },
+          );
+        }
+      }
+
+      // Comment endpoint
+      if (url.pathname === "/api/v1/comment" && request.method === "POST") {
+        if (!currentUser) {
+          return new Response(
+            JSON.stringify({
+              ok: false,
+              error: AUTH_ERRORS.NOT_AUTHENTICATED,
+            }),
+            { status: 401, headers },
+          );
+        }
+
+        try {
+          const body = (await request.json()) as {
+            story_id?: number;
+            parent_id?: number;
+            text?: string;
+          };
+          const { story_id, parent_id, text } = body;
+
+          if (!story_id || !text) {
+            return new Response(
+              JSON.stringify({
+                ok: false,
+                error: "Story ID and text are required",
+              }),
+              { status: 400, headers },
+            );
+          }
+
+          // Check rate limit
+          const authService = new AuthService();
+          const canComment = await authService.checkRateLimit(
+            currentUser.id,
+            "comment",
+          );
+          if (!canComment) {
+            return new Response(
+              JSON.stringify({
+                ok: false,
+                error: AUTH_ERRORS.COMMENT_LIMIT_REACHED,
+              }),
+              { status: 429, headers },
+            );
+          }
+
+          const comment = {
+            id: Math.floor(Math.random() * 1000000),
+            user: currentUser.username,
+            user_id: currentUser.id,
+            story_id,
+            parent_id: parent_id || null,
+            text: text.trim(),
+            points: 1,
+            created_at: new Date().toISOString(),
+          };
+
+          const story = stories.get(story_id);
+          if (!story) {
+            return new Response(
+              JSON.stringify({
+                ok: false,
+                error: "Story not found",
+              }),
+              { status: 404, headers },
+            );
+          }
+
+          if (!story.comments) story.comments = [];
+          story.comments.push(comment);
+
+          await authService.incrementRateLimit(currentUser.id, "comment");
+          await authService.updateKarma(currentUser.id, 1);
+
+          return new Response(
+            JSON.stringify({
+              ok: true,
+              data: comment,
             }),
             { headers },
           );
@@ -680,7 +834,36 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
           </div>
           <hr>
           <h3>Comments</h3>
-          <p>Comments coming soon...</p>
+          ${currentUser ? `
+            <form method="post" action="/comment">
+              <input type="hidden" name="story_id" value="${story.id}">
+              <textarea name="text" rows="6" style="width: 100%; max-width: 500px;" placeholder="Add a comment..." required></textarea><br>
+              <button type="submit" style="margin-top: 10px;">Add Comment</button>
+            </form>
+          ` : '<p><a href="/login">Login</a> to comment</p>'}
+          <div class="comments" style="margin-top: 20px;">
+            ${story.comments.map(comment => `
+              <div class="comment" style="margin: 10px 0; padding: 10px; background: #f6f6f6;">
+                <div class="comment-header" style="font-size: 12px; color: #666;">
+                  <span class="vote-arrow" style="cursor: pointer;">▲</span>
+                  ${comment.user} • ${comment.points} points • ${timeAgo(comment.created_at)}
+                </div>
+                <div class="comment-text" style="margin-top: 5px;">${comment.text}</div>
+                ${comment.children ? `
+                  <div class="replies" style="margin-left: 20px; border-left: 2px solid #ddd; padding-left: 10px;">
+                    ${comment.children.map(reply => `
+                      <div class="comment" style="margin: 10px 0;">
+                        <div class="comment-header" style="font-size: 12px; color: #666;">
+                          ${reply.user} • ${reply.points} points
+                        </div>
+                        <div>${reply.text}</div>
+                      </div>
+                    `).join('')}
+                  </div>
+                ` : ''}
+              </div>
+            `).join('')}
+          </div>
         </div>
       `;
 
