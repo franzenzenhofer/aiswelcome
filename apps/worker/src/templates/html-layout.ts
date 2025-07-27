@@ -159,8 +159,8 @@ export const htmlTemplate = (
       margin-left: 34px;
       margin-top: 2px;
     }
-    a { color: #0000ee; text-decoration: none; }
-    a:visited { color: #551a8b; }
+    a { color: #000000; text-decoration: none; }
+    a:visited { color: #828282; }
     a:hover { text-decoration: underline; }
     .submit-form {
       margin: 20px 0;
