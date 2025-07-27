@@ -89,6 +89,51 @@ export default {
       return handleLogout(request);
     }
 
+    // Forgot password page
+    if (url.pathname === "/forgot") {
+      if (request.method === "POST") {
+        const formData = await request.formData();
+        const email = formData.get("email")?.toString();
+        
+        // In production, this would send an email
+        const content = `
+          <h2>Password Reset</h2>
+          <div class="message success">
+            If an account exists for ${email}, we've sent password reset instructions to that email address.
+          </div>
+          <p><a href="/login">← back to login</a></p>
+        `;
+        
+        return new Response(
+          htmlTemplate(content, "Password Reset | AISWelcome", null),
+          {
+            headers: { "Content-Type": "text/html" },
+          }
+        );
+      }
+      
+      const content = `
+        <h2>Reset Password</h2>
+        <form method="post" action="/forgot">
+          <div>
+            <label for="email">Email address:</label><br>
+            <input type="email" id="email" name="email" required>
+          </div>
+          <div style="margin-top: 10px;">
+            <button type="submit">Send Reset Email</button>
+          </div>
+        </form>
+        <p><a href="/login">← back to login</a></p>
+      `;
+      
+      return new Response(
+        htmlTemplate(content, "Forgot Password | AISWelcome", null),
+        {
+          headers: { "Content-Type": "text/html" },
+        }
+      );
+    }
+
     if (url.pathname === "/user") {
       return handleUserProfile(request);
     }
@@ -601,6 +646,115 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
         {
           headers: { "Content-Type": "text/html" },
         },
+      );
+    }
+
+    // Item page (for stories without URLs)
+    if (url.pathname === "/item") {
+      const storyId = parseInt(url.searchParams.get("id") || "0");
+      const story = stories.get(storyId);
+      
+      if (!story) {
+        return new Response(
+          htmlTemplate(
+            `<h2>Story Not Found</h2>
+             <p>The story you're looking for doesn't exist.</p>
+             <p><a href="/">← back to homepage</a></p>`,
+            "Not Found | AISWelcome",
+            currentUser
+          ),
+          {
+            status: 404,
+            headers: { "Content-Type": "text/html" },
+          }
+        );
+      }
+
+      const content = `
+        <div class="story-page">
+          <h2>${story.title}</h2>
+          ${story.url ? `<p><a href="${story.url}">${story.url}</a></p>` : ""}
+          ${story.text ? `<div class="story-text">${story.text}</div>` : ""}
+          <div class="story-meta">
+            ${story.points} points by <a href="/user?id=${story.user}">${story.user}</a> ${timeAgo(story.time)}
+          </div>
+          <hr>
+          <h3>Comments</h3>
+          <p>Comments coming soon...</p>
+        </div>
+      `;
+
+      return new Response(
+        htmlTemplate(content, `${story.title} | AISWelcome`, currentUser),
+        {
+          headers: { "Content-Type": "text/html" },
+        }
+      );
+    }
+
+    // User profile page
+    if (url.pathname === "/user") {
+      const username = url.searchParams.get("id") || "";
+      
+      const content = `
+        <h2>User: ${username}</h2>
+        <p>User profile for ${username}</p>
+        <p>Member since: Recently</p>
+        <p>Karma: 0</p>
+        <p><a href="/">← back to homepage</a></p>
+      `;
+
+      return new Response(
+        htmlTemplate(content, `${username} | AISWelcome`, currentUser),
+        {
+          headers: { "Content-Type": "text/html" },
+        }
+      );
+    }
+
+    // Newest stories
+    if (url.pathname === "/newest") {
+      const storiesArray = Array.from(stories.values()).sort((a, b) => {
+        return new Date(b.time).getTime() - new Date(a.time).getTime();
+      });
+
+      const storiesHtml = storiesArray
+        .map(
+          (story, index) => `
+        <div class="story">
+          <span class="story-rank">${index + 1}.</span>
+          ${
+            currentUser && !story.voters.has(currentUser.username)
+              ? `<span class="vote-arrow" onclick="vote(${story.id})" title="upvote"></span>`
+              : '<span style="display: inline-block; width: 14px;"></span>'
+          }
+          <span class="story-title">
+            ${
+              story.url
+                ? `<a href="${story.url}">${story.title}</a>`
+                : `<a href="/item?id=${story.id}">${story.title}</a>`
+            }
+            ${story.domain ? `<span class="story-domain">(${story.domain})</span>` : ""}
+          </span>
+          <div class="story-meta">
+            ${story.points} points by <a href="/user?id=${story.user}">${story.user}</a> ${timeAgo(story.time)} |
+            <a href="/item?id=${story.id}">${story.comments.length} comments</a>
+          </div>
+        </div>
+      `,
+        )
+        .join("");
+
+      const content = `
+        <h2>New Stories</h2>
+        ${storiesHtml || '<p>No stories yet. <a href="/submit">Submit</a> the first one!</p>'}
+      `;
+
+      return new Response(
+        htmlTemplate(content, "Newest | AISWelcome", currentUser),
+        {
+          headers: { "Content-Type": "text/html" },
+        }
       );
     }
 

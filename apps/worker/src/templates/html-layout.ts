@@ -70,33 +70,37 @@ export const htmlTemplate = (
       body {
         font-size: 14px;
       }
+      .header {
+        padding: 1px;
+      }
       .header-content {
-        padding: 8px;
+        padding: 4px 8px;
       }
       .header h1 {
-        font-size: 18px;
-        margin-bottom: 5px;
+        font-size: 14px;
+        margin: 0;
+        margin-right: 8px;
       }
       .header-left {
         width: 100%;
-        margin-bottom: 5px;
+        margin-bottom: 2px;
       }
       .header nav {
-        display: block;
-        margin-top: 5px;
+        display: inline;
+        font-size: 12px;
       }
       .header nav a {
-        padding: 5px;
-        margin: 0 5px;
+        padding: 2px;
+        margin: 0 3px;
       }
       .header-right {
         width: 100%;
         text-align: left;
-        font-size: 14px;
+        font-size: 11px;
       }
       .header-right a {
-        padding: 5px;
-        margin: 0 5px;
+        padding: 2px;
+        margin: 0 3px;
       }
       .container {
         padding: 12px;
