@@ -1,6 +1,6 @@
 {
   "name": "aiswelcome",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -11,6 +11,9 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "test": "turbo run test",
+    "test:tdd": "node scripts/test-complete-tdd.js",
+    "test:integration": "node scripts/test-all-functionality.js",
+    "test:all": "npm run test:integration && npm run test:tdd",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test:e2e": "turbo run test:e2e",
