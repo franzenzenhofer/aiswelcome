@@ -1,4 +1,8 @@
-export const htmlTemplate = (content: string, title: string = 'AISWelcome', user?: any) => `
+export const htmlTemplate = (
+  content: string,
+  title: string = "AISWelcome",
+  user?: any,
+) => `
 <!DOCTYPE html>
 <html>
 <head>
@@ -27,10 +31,12 @@ export const htmlTemplate = (content: string, title: string = 'AISWelcome', user
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
     }
     .header-left {
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
     }
     .header h1 {
       display: inline;
@@ -57,6 +63,69 @@ export const htmlTemplate = (content: string, title: string = 'AISWelcome', user
       color: #000;
       text-decoration: none;
       margin: 0 3px;
+    }
+    
+    /* Mobile styles */
+    @media (max-width: 768px) {
+      body {
+        font-size: 14px;
+      }
+      .header-content {
+        padding: 8px;
+      }
+      .header h1 {
+        font-size: 18px;
+        margin-bottom: 5px;
+      }
+      .header-left {
+        width: 100%;
+        margin-bottom: 5px;
+      }
+      .header nav {
+        display: block;
+        margin-top: 5px;
+      }
+      .header nav a {
+        padding: 5px;
+        margin: 0 5px;
+      }
+      .header-right {
+        width: 100%;
+        text-align: left;
+        font-size: 14px;
+      }
+      .header-right a {
+        padding: 5px;
+        margin: 0 5px;
+      }
+      .container {
+        padding: 12px;
+      }
+      .story {
+        margin: 12px 0;
+        padding: 8px 0;
+        border-bottom: 1px solid #eee;
+      }
+      .story-rank {
+        width: 25px;
+      }
+      .story-title {
+        font-size: 14px;
+      }
+      .story-meta {
+        font-size: 12px;
+        margin-left: 29px;
+        margin-top: 4px;
+      }
+      .vote-arrow {
+        width: 14px;
+        height: 14px;
+        margin: 0 6px 0 4px;
+      }
+      a {
+        padding: 4px 0;
+        display: inline-block;
+      }
     }
     .container {
       max-width: 1200px;
@@ -94,17 +163,53 @@ export const htmlTemplate = (content: string, title: string = 'AISWelcome', user
     }
     .submit-form input[type="text"], 
     .submit-form input[type="url"],
+    .submit-form input[type="password"],
+    .submit-form input[type="email"],
     .submit-form textarea {
       width: 100%;
       max-width: 500px;
-      padding: 4px;
+      padding: 8px;
       margin: 4px 0;
       font-family: monospace;
-      font-size: 13px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
     }
-    .submit-form button {
-      padding: 4px 12px;
-      font-size: 13px;
+    .submit-form button,
+    button {
+      padding: 10px 20px;
+      font-size: 14px;
+      background: #ff6600;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      min-width: 100px;
+    }
+    .submit-form button:hover,
+    button:hover {
+      background: #e55500;
+    }
+    .submit-form button:active,
+    button:active {
+      background: #d54400;
+    }
+    @media (max-width: 768px) {
+      .submit-form input[type="text"], 
+      .submit-form input[type="url"],
+      .submit-form input[type="password"],
+      .submit-form input[type="email"],
+      .submit-form textarea {
+        font-size: 16px; /* Prevents zoom on iOS */
+        padding: 12px;
+      }
+      .submit-form button,
+      button {
+        padding: 12px 24px;
+        font-size: 16px;
+        width: 100%;
+        max-width: 300px;
+      }
     }
     .message {
       padding: 10px;
@@ -162,13 +267,17 @@ export const htmlTemplate = (content: string, title: string = 'AISWelcome', user
         </nav>
       </div>
       <div class="header-right">
-        ${user ? `
-          <a href="/user?id=${user.username}">${user.username}</a> (${user.karma}) ${user.is_admin ? '<span class="admin-badge">admin</span>' : ''} |
+        ${
+          user
+            ? `
+          <a href="/user?id=${user.username}">${user.username}</a> (${user.karma}) ${user.is_admin ? '<span class="admin-badge">admin</span>' : ""} |
           <a href="/logout">logout</a>
-        ` : `
+        `
+            : `
           <a href="/login">login</a> |
           <a href="/register">register</a>
-        `}
+        `
+        }
       </div>
     </div>
   </div>

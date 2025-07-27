@@ -1,5 +1,5 @@
 name = "aiswelcome"
-main = "apps/worker/src/index-authenticated.ts"
+main = "apps/worker/src/index.ts"
 compatibility_date = "2025-07-26"
 compatibility_flags = ["nodejs_compat"]
 

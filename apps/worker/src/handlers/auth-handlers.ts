@@ -1,23 +1,20 @@
-import { AuthService } from '../auth/service';
-import { AUTH_CONFIG, AUTH_ERRORS } from '../auth/constants';
-import { htmlTemplate } from '../templates/html-layout';
+import { AuthService } from "../auth/service";
+import { AUTH_CONFIG } from "../auth/constants";
+import { htmlTemplate } from "../templates/html-layout";
 
-export async function handleLogin(request: Request, env: any): Promise<Response> {
-  if (!env.DB) {
-    return renderLoginPage('Database not configured yet');
-  }
-  const authService = new AuthService(env.DB);
+export async function handleLogin(request: Request): Promise<Response> {
+  const authService = new AuthService();
 
-  if (request.method === 'GET') {
+  if (request.method === "GET") {
     return renderLoginPage();
   }
 
-  if (request.method === 'POST') {
+  if (request.method === "POST") {
     try {
       const formData = await request.formData();
-      const username = formData.get('username')?.toString() || '';
-      const password = formData.get('password')?.toString() || '';
-      const goto = formData.get('goto')?.toString() || '/';
+      const username = formData.get("username")?.toString() || "";
+      const password = formData.get("password")?.toString() || "";
+      const goto = formData.get("goto")?.toString() || "/";
 
       const session = await authService.login(username, password, request);
 
@@ -25,9 +22,9 @@ export async function handleLogin(request: Request, env: any): Promise<Response>
       const response = new Response(null, {
         status: 303,
         headers: {
-          'Location': goto,
-          'Set-Cookie': `${AUTH_CONFIG.COOKIE_NAME}=${session.id}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${AUTH_CONFIG.SESSION_DURATION / 1000}`
-        }
+          Location: goto,
+          "Set-Cookie": `${AUTH_CONFIG.COOKIE_NAME}=${session.id}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${AUTH_CONFIG.SESSION_DURATION / 1000}`,
+        },
       });
 
       return response;
@@ -36,25 +33,25 @@ export async function handleLogin(request: Request, env: any): Promise<Response>
     }
   }
 
-  return new Response('Method not allowed', { status: 405 });
+  return new Response("Method not allowed", { status: 405 });
 }
 
-export async function handleRegister(request: Request, env: any): Promise<Response> {
-  const authService = new AuthService(env.DB);
+export async function handleRegister(request: Request): Promise<Response> {
+  const authService = new AuthService();
 
-  if (request.method === 'GET') {
+  if (request.method === "GET") {
     return renderRegisterPage();
   }
 
-  if (request.method === 'POST') {
+  if (request.method === "POST") {
     try {
       const formData = await request.formData();
-      const username = formData.get('username')?.toString() || '';
-      const password = formData.get('password')?.toString() || '';
-      const email = formData.get('email')?.toString() || '';
+      const username = formData.get("username")?.toString() || "";
+      const password = formData.get("password")?.toString() || "";
+      const email = formData.get("email")?.toString() || "";
 
       // Create user
-      const user = await authService.register(username, password, email);
+      await authService.register(username, password, email);
 
       // Auto-login after registration
       const session = await authService.login(username, password, request);
@@ -62,9 +59,9 @@ export async function handleRegister(request: Request, env: any): Promise<Respon
       const response = new Response(null, {
         status: 303,
         headers: {
-          'Location': `/user?id=${username}`,
-          'Set-Cookie': `${AUTH_CONFIG.COOKIE_NAME}=${session.id}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${AUTH_CONFIG.SESSION_DURATION / 1000}`
-        }
+          Location: `/user?id=${username}`,
+          "Set-Cookie": `${AUTH_CONFIG.COOKIE_NAME}=${session.id}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${AUTH_CONFIG.SESSION_DURATION / 1000}`,
+        },
       });
 
       return response;
@@ -73,11 +70,11 @@ export async function handleRegister(request: Request, env: any): Promise<Respon
     }
   }
 
-  return new Response('Method not allowed', { status: 405 });
+  return new Response("Method not allowed", { status: 405 });
 }
 
-export async function handleLogout(request: Request, env: any): Promise<Response> {
-  const authService = new AuthService(env.DB);
+export async function handleLogout(request: Request): Promise<Response> {
+  const authService = new AuthService();
   const sessionId = getSessionFromRequest(request);
 
   if (sessionId) {
@@ -87,25 +84,25 @@ export async function handleLogout(request: Request, env: any): Promise<Response
   return new Response(null, {
     status: 303,
     headers: {
-      'Location': '/',
-      'Set-Cookie': `${AUTH_CONFIG.COOKIE_NAME}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`
-    }
+      Location: "/",
+      "Set-Cookie": `${AUTH_CONFIG.COOKIE_NAME}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`,
+    },
   });
 }
 
-export async function handleUserProfile(request: Request, env: any): Promise<Response> {
+export async function handleUserProfile(request: Request): Promise<Response> {
   const url = new URL(request.url);
-  const username = url.searchParams.get('id');
+  const username = url.searchParams.get("id");
 
   if (!username) {
-    return new Response('User not found', { status: 404 });
+    return new Response("User not found", { status: 404 });
   }
 
-  const authService = new AuthService(env.DB);
+  const authService = new AuthService();
   const user = await authService.getUserByUsername(username);
 
   if (!user) {
-    return new Response('User not found', { status: 404 });
+    return new Response("User not found", { status: 404 });
   }
 
   return renderUserProfile(user);
@@ -114,24 +111,24 @@ export async function handleUserProfile(request: Request, env: any): Promise<Res
 // Helper functions
 
 export function getSessionFromRequest(request: Request): string | null {
-  const cookieHeader = request.headers.get('Cookie');
+  const cookieHeader = request.headers.get("Cookie");
   if (!cookieHeader) return null;
 
   const cookies = Object.fromEntries(
-    cookieHeader.split(';').map(c => {
-      const [key, value] = c.trim().split('=');
+    cookieHeader.split(";").map((c) => {
+      const [key, value] = c.trim().split("=");
       return [key, value];
-    })
+    }),
   );
 
   return cookies[AUTH_CONFIG.COOKIE_NAME] || null;
 }
 
-export async function getCurrentUser(request: Request, env: any): Promise<any | null> {
+export async function getCurrentUser(request: Request): Promise<any | null> {
   const sessionId = getSessionFromRequest(request);
   if (!sessionId) return null;
 
-  const authService = new AuthService(env.DB);
+  const authService = new AuthService();
   const session = await authService.getSession(sessionId);
   if (!session) return null;
 
@@ -144,7 +141,7 @@ function renderLoginPage(error?: string): Response {
   const content = `
     <div class="auth-container">
       <h2>Login</h2>
-      ${error ? `<div class="error">${error}</div>` : ''}
+      ${error ? `<div class="error">${error}</div>` : ""}
       <form method="post" action="/login">
         <div class="field">
           <label for="username">Username:</label>
@@ -210,8 +207,8 @@ function renderLoginPage(error?: string): Response {
     </style>
   `;
 
-  return new Response(htmlTemplate(content, 'Login | AISWelcome'), {
-    headers: { 'Content-Type': 'text/html' }
+  return new Response(htmlTemplate(content, "Login | AISWelcome"), {
+    headers: { "Content-Type": "text/html" },
   });
 }
 
@@ -219,7 +216,7 @@ function renderRegisterPage(error?: string): Response {
   const content = `
     <div class="auth-container">
       <h2>Create Account</h2>
-      ${error ? `<div class="error">${error}</div>` : ''}
+      ${error ? `<div class="error">${error}</div>` : ""}
       <form method="post" action="/register">
         <div class="field">
           <label for="username">Username:</label>
@@ -327,14 +324,14 @@ function renderRegisterPage(error?: string): Response {
     </style>
   `;
 
-  return new Response(htmlTemplate(content, 'Create Account | AISWelcome'), {
-    headers: { 'Content-Type': 'text/html' }
+  return new Response(htmlTemplate(content, "Create Account | AISWelcome"), {
+    headers: { "Content-Type": "text/html" },
   });
 }
 
 function renderUserProfile(user: any): Response {
   const memberSince = new Date(user.created_at * 1000).toLocaleDateString();
-  
+
   const content = `
     <div class="user-profile">
       <h2>User: ${user.username}</h2>
@@ -351,18 +348,26 @@ function renderUserProfile(user: any): Response {
           <td class="label">karma:</td>
           <td>${user.karma}</td>
         </tr>
-        ${user.about ? `
+        ${
+          user.about
+            ? `
         <tr>
           <td class="label">about:</td>
           <td class="about">${user.about}</td>
         </tr>
-        ` : ''}
-        ${user.is_admin ? `
+        `
+            : ""
+        }
+        ${
+          user.is_admin
+            ? `
         <tr>
           <td class="label">role:</td>
           <td><span class="admin-badge">admin</span></td>
         </tr>
-        ` : ''}
+        `
+            : ""
+        }
       </table>
       
       <div class="profile-links">
@@ -407,6 +412,6 @@ function renderUserProfile(user: any): Response {
   `;
 
   return new Response(htmlTemplate(content, `${user.username} | AISWelcome`), {
-    headers: { 'Content-Type': 'text/html' }
+    headers: { "Content-Type": "text/html" },
   });
 }

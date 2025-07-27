@@ -6,8 +6,13 @@ export interface LayoutOptions {
 }
 
 export function renderLayout(options: LayoutOptions): string {
-  const { title, content, description = 'An AI-friendly Hacker News clone', scripts = '' } = options;
-  
+  const {
+    title,
+    content,
+    description = "An AI-friendly Hacker News clone",
+    scripts = "",
+  } = options;
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>

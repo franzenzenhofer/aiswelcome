@@ -1,54 +1,63 @@
-import { AISWelcomeMCPServer } from '../mcp/server';
-import { htmlTemplate } from '../templates/html-layout';
-import { getCurrentUser } from './auth-handlers';
+import { AISWelcomeMCPServer } from "../mcp/server";
+import { htmlTemplate } from "../templates/html-layout";
+import { getCurrentUser } from "./auth-handlers";
 
-export async function handleMCPRequest(request: Request, env: any): Promise<Response> {
+export async function handleMCPRequest(
+  request: Request,
+  env: any,
+): Promise<Response> {
   const mcpServer = new AISWelcomeMCPServer();
-  
+
   // Handle JSON-RPC requests
-  if (request.method === 'POST' && request.headers.get('content-type')?.includes('application/json')) {
+  if (
+    request.method === "POST" &&
+    request.headers.get("content-type")?.includes("application/json")
+  ) {
     try {
-      const body = await request.json();
-      const user = await getCurrentUser(request, env);
+      const body = (await request.json()) as any;
+      const user = await getCurrentUser(request);
       const response = await mcpServer.handleRequest(body, env, user);
-      
+
       return new Response(JSON.stringify(response), {
         headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-        }
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        },
       });
     } catch (error) {
-      return new Response(JSON.stringify({
-        error: {
-          code: -32700,
-          message: 'Parse error'
-        }
-      }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: -32700,
+            message: "Parse error",
+          },
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
     }
   }
 
   // Handle OpenRPC discovery
-  if (request.method === 'GET' && request.url.endsWith('/openrpc.json')) {
+  if (request.method === "GET" && request.url.endsWith("/openrpc.json")) {
     return new Response(JSON.stringify(mcpServer.generateOpenRPC()), {
       headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      }
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
     });
   }
 
   // Handle documentation page
-  if (request.method === 'GET') {
-    return renderMCPDocumentation(await getCurrentUser(request, env));
+  if (request.method === "GET") {
+    return renderMCPDocumentation(await getCurrentUser(request));
   }
 
-  return new Response('Method not allowed', { status: 405 });
+  return new Response("Method not allowed", { status: 405 });
 }
 
 function renderMCPDocumentation(user: any): Response {
@@ -215,7 +224,7 @@ Cookie: aiswelcome_session=YOUR_SESSION_TOKEN
     <p>For questions or issues with the MCP server, please <a href="https://github.com/franzenzenhofer/aiswelcome/issues">open an issue on GitHub</a>.</p>
   `;
 
-  return new Response(htmlTemplate(content, 'MCP Server | AISWelcome', user), {
-    headers: { 'Content-Type': 'text/html' }
+  return new Response(htmlTemplate(content, "MCP Server | AISWelcome", user), {
+    headers: { "Content-Type": "text/html" },
   });
 }

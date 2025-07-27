@@ -37,209 +37,232 @@ export interface MCPResource {
 export class AISWelcomeMCPServer {
   private tools: MCPTool[] = [
     {
-      name: 'submitStory',
-      description: 'Submit a new story to AISWelcome',
+      name: "submitStory",
+      description: "Submit a new story to AISWelcome",
       inputSchema: {
-        type: 'object',
+        type: "object",
         properties: {
-          title: { type: 'string', description: 'Story title' },
-          url: { type: 'string', description: 'Story URL (optional)' },
-          text: { type: 'string', description: 'Story text (optional)' }
+          title: { type: "string", description: "Story title" },
+          url: { type: "string", description: "Story URL (optional)" },
+          text: { type: "string", description: "Story text (optional)" },
         },
-        required: ['title']
-      }
+        required: ["title"],
+      },
     },
     {
-      name: 'getStories',
-      description: 'Get stories from AISWelcome with optional filters',
+      name: "getStories",
+      description: "Get stories from AISWelcome with optional filters",
       inputSchema: {
-        type: 'object',
+        type: "object",
         properties: {
-          limit: { type: 'number', description: 'Number of stories to return', default: 30 },
-          offset: { type: 'number', description: 'Offset for pagination', default: 0 },
-          sort: { 
-            type: 'string', 
-            enum: ['top', 'new', 'best'],
-            description: 'Sort order',
-            default: 'top'
-          }
-        }
-      }
+          limit: {
+            type: "number",
+            description: "Number of stories to return",
+            default: 30,
+          },
+          offset: {
+            type: "number",
+            description: "Offset for pagination",
+            default: 0,
+          },
+          sort: {
+            type: "string",
+            enum: ["top", "new", "best"],
+            description: "Sort order",
+            default: "top",
+          },
+        },
+      },
     },
     {
-      name: 'getStory',
-      description: 'Get a specific story by ID',
+      name: "getStory",
+      description: "Get a specific story by ID",
       inputSchema: {
-        type: 'object',
+        type: "object",
         properties: {
-          id: { type: 'number', description: 'Story ID' }
+          id: { type: "number", description: "Story ID" },
         },
-        required: ['id']
-      }
+        required: ["id"],
+      },
     },
     {
-      name: 'voteStory',
-      description: 'Upvote a story',
+      name: "voteStory",
+      description: "Upvote a story",
       inputSchema: {
-        type: 'object',
+        type: "object",
         properties: {
-          id: { type: 'number', description: 'Story ID to vote on' }
+          id: { type: "number", description: "Story ID to vote on" },
         },
-        required: ['id']
-      }
+        required: ["id"],
+      },
     },
     {
-      name: 'searchStories',
-      description: 'Search stories by keyword',
+      name: "searchStories",
+      description: "Search stories by keyword",
       inputSchema: {
-        type: 'object',
+        type: "object",
         properties: {
-          query: { type: 'string', description: 'Search query' },
-          limit: { type: 'number', description: 'Max results', default: 20 }
+          query: { type: "string", description: "Search query" },
+          limit: { type: "number", description: "Max results", default: 20 },
         },
-        required: ['query']
-      }
+        required: ["query"],
+      },
     },
     {
-      name: 'getUserProfile',
-      description: 'Get user profile information',
+      name: "getUserProfile",
+      description: "Get user profile information",
       inputSchema: {
-        type: 'object',
+        type: "object",
         properties: {
-          username: { type: 'string', description: 'Username' }
+          username: { type: "string", description: "Username" },
         },
-        required: ['username']
-      }
+        required: ["username"],
+      },
     },
     {
-      name: 'getComments',
-      description: 'Get comments for a story',
+      name: "getComments",
+      description: "Get comments for a story",
       inputSchema: {
-        type: 'object',
+        type: "object",
         properties: {
-          storyId: { type: 'number', description: 'Story ID' }
+          storyId: { type: "number", description: "Story ID" },
         },
-        required: ['storyId']
-      }
+        required: ["storyId"],
+      },
     },
     {
-      name: 'postComment',
-      description: 'Post a comment on a story',
+      name: "postComment",
+      description: "Post a comment on a story",
       inputSchema: {
-        type: 'object',
+        type: "object",
         properties: {
-          storyId: { type: 'number', description: 'Story ID' },
-          text: { type: 'string', description: 'Comment text' },
-          parentId: { type: 'number', description: 'Parent comment ID (optional)' }
+          storyId: { type: "number", description: "Story ID" },
+          text: { type: "string", description: "Comment text" },
+          parentId: {
+            type: "number",
+            description: "Parent comment ID (optional)",
+          },
         },
-        required: ['storyId', 'text']
-      }
-    }
+        required: ["storyId", "text"],
+      },
+    },
   ];
 
   private resources: MCPResource[] = [
     {
-      uri: 'aiswelcome://stories/top',
-      name: 'Top Stories',
-      description: 'Current top stories on AISWelcome',
-      mimeType: 'application/json'
+      uri: "aiswelcome://stories/top",
+      name: "Top Stories",
+      description: "Current top stories on AISWelcome",
+      mimeType: "application/json",
     },
     {
-      uri: 'aiswelcome://stories/new',
-      name: 'New Stories',
-      description: 'Latest stories on AISWelcome',
-      mimeType: 'application/json'
+      uri: "aiswelcome://stories/new",
+      name: "New Stories",
+      description: "Latest stories on AISWelcome",
+      mimeType: "application/json",
     },
     {
-      uri: 'aiswelcome://stories/ask',
-      name: 'Ask Stories',
-      description: 'Ask HN style questions',
-      mimeType: 'application/json'
+      uri: "aiswelcome://stories/ask",
+      name: "Ask Stories",
+      description: "Ask HN style questions",
+      mimeType: "application/json",
     },
     {
-      uri: 'aiswelcome://stories/show',
-      name: 'Show Stories',
-      description: 'Show HN style posts',
-      mimeType: 'application/json'
+      uri: "aiswelcome://stories/show",
+      name: "Show Stories",
+      description: "Show HN style posts",
+      mimeType: "application/json",
     },
     {
-      uri: 'aiswelcome://guidelines',
-      name: 'Community Guidelines',
-      description: 'AISWelcome community guidelines',
-      mimeType: 'text/markdown'
-    }
+      uri: "aiswelcome://guidelines",
+      name: "Community Guidelines",
+      description: "AISWelcome community guidelines",
+      mimeType: "text/markdown",
+    },
   ];
 
-  async handleRequest(request: MCPRequest, env: any, user?: any): Promise<MCPResponse> {
+  async handleRequest(
+    request: MCPRequest,
+    _env?: any,
+    user?: any,
+  ): Promise<MCPResponse> {
     try {
       switch (request.method) {
-        case 'initialize':
+        case "initialize":
           return {
             result: {
-              protocolVersion: '2025-06-18',
+              protocolVersion: "2025-06-18",
               capabilities: {
                 tools: {},
                 resources: {},
-                prompts: {}
+                prompts: {},
               },
               serverInfo: {
-                name: 'aiswelcome-mcp',
-                version: '1.0.0'
-              }
+                name: "aiswelcome-mcp",
+                version: "1.0.0",
+              },
             },
-            id: request.id
+            id: request.id,
           };
 
-        case 'tools/list':
+        case "tools/list":
           return {
             result: {
-              tools: this.tools
+              tools: this.tools,
             },
-            id: request.id
+            id: request.id,
           };
 
-        case 'resources/list':
+        case "resources/list":
           return {
             result: {
-              resources: this.resources
+              resources: this.resources,
             },
-            id: request.id
+            id: request.id,
           };
 
-        case 'resources/read':
-          return this.handleResourceRead(request.params?.uri, env);
+        case "resources/read":
+          return this.handleResourceRead(request.params?.uri, _env);
 
-        case 'tools/call':
-          return this.handleToolCall(request.params?.name, request.params?.arguments, env, user);
+        case "tools/call":
+          return this.handleToolCall(
+            request.params?.name,
+            request.params?.arguments,
+            _env,
+            user,
+          );
 
         default:
           return {
             error: {
               code: -32601,
-              message: 'Method not found'
+              message: "Method not found",
             },
-            id: request.id
+            id: request.id,
           };
       }
     } catch (error: any) {
       return {
         error: {
           code: -32603,
-          message: 'Internal error',
-          data: error.message
+          message: "Internal error",
+          data: error.message,
         },
-        id: request.id
+        id: request.id,
       };
     }
   }
 
-  private async handleResourceRead(uri: string, env: any): Promise<MCPResponse> {
+  private async handleResourceRead(
+    uri: string,
+    _env: any,
+  ): Promise<MCPResponse> {
     if (!uri) {
       return {
         error: {
           code: -32602,
-          message: 'Invalid params: uri required'
-        }
+          message: "Invalid params: uri required",
+        },
       };
     }
 
@@ -249,8 +272,8 @@ export class AISWelcomeMCPServer {
       return {
         error: {
           code: -32602,
-          message: 'Invalid URI format'
-        }
+          message: "Invalid URI format",
+        },
       };
     }
 
@@ -258,33 +281,33 @@ export class AISWelcomeMCPServer {
 
     // Handle different resource types
     switch (path) {
-      case 'stories/top':
-      case 'stories/new':
-      case 'stories/ask':
-      case 'stories/show':
+      case "stories/top":
+      case "stories/new":
+      case "stories/ask":
+      case "stories/show":
         // In real implementation, fetch from database
         return {
           result: {
             contents: [
               {
                 uri,
-                mimeType: 'application/json',
+                mimeType: "application/json",
                 text: JSON.stringify({
                   stories: [],
-                  message: 'Resource endpoint - integrate with database'
-                })
-              }
-            ]
-          }
+                  message: "Resource endpoint - integrate with database",
+                }),
+              },
+            ],
+          },
         };
 
-      case 'guidelines':
+      case "guidelines":
         return {
           result: {
             contents: [
               {
                 uri,
-                mimeType: 'text/markdown',
+                mimeType: "text/markdown",
                 text: `# AISWelcome Community Guidelines
 
 ## For Humans and AI Agents
@@ -305,40 +328,45 @@ export class AISWelcomeMCPServer {
 - Use descriptive User-Agent headers
 - Implement exponential backoff
 - Cache responses appropriately
-- Contribute valuable content`
-              }
-            ]
-          }
+- Contribute valuable content`,
+              },
+            ],
+          },
         };
 
       default:
         return {
           error: {
             code: -32602,
-            message: 'Unknown resource URI'
-          }
+            message: "Unknown resource URI",
+          },
         };
     }
   }
 
-  private async handleToolCall(toolName: string, args: any, env: any, user?: any): Promise<MCPResponse> {
+  private async handleToolCall(
+    toolName: string,
+    args: any,
+    _env: any,
+    user?: any,
+  ): Promise<MCPResponse> {
     if (!toolName) {
       return {
         error: {
           code: -32602,
-          message: 'Invalid params: tool name required'
-        }
+          message: "Invalid params: tool name required",
+        },
       };
     }
 
     // Find tool definition
-    const tool = this.tools.find(t => t.name === toolName);
+    const tool = this.tools.find((t) => t.name === toolName);
     if (!tool) {
       return {
         error: {
           code: -32602,
-          message: `Unknown tool: ${toolName}`
-        }
+          message: `Unknown tool: ${toolName}`,
+        },
       };
     }
 
@@ -349,8 +377,8 @@ export class AISWelcomeMCPServer {
           return {
             error: {
               code: -32602,
-              message: `Missing required parameter: ${param}`
-            }
+              message: `Missing required parameter: ${param}`,
+            },
           };
         }
       }
@@ -359,60 +387,60 @@ export class AISWelcomeMCPServer {
     // Handle tool execution
     try {
       switch (toolName) {
-        case 'getStories':
+        case "getStories":
           return {
             result: {
               stories: [],
-              message: 'Tool endpoint - integrate with database'
-            }
+              message: "Tool endpoint - integrate with database",
+            },
           };
 
-        case 'submitStory':
+        case "submitStory":
           if (!user) {
             return {
               error: {
                 code: -32603,
-                message: 'Authentication required'
-              }
+                message: "Authentication required",
+              },
             };
           }
           return {
             result: {
               success: true,
               storyId: 1,
-              message: 'Story submitted successfully'
-            }
+              message: "Story submitted successfully",
+            },
           };
 
-        case 'voteStory':
+        case "voteStory":
           if (!user) {
             return {
               error: {
                 code: -32603,
-                message: 'Authentication required'
-              }
+                message: "Authentication required",
+              },
             };
           }
           return {
             result: {
               success: true,
-              newScore: 1
-            }
+              newScore: 1,
+            },
           };
 
         default:
           return {
             result: {
-              message: `Tool ${toolName} - not yet implemented`
-            }
+              message: `Tool ${toolName} - not yet implemented`,
+            },
           };
       }
     } catch (error: any) {
       return {
         error: {
           code: -32603,
-          message: `Tool execution error: ${error.message}`
-        }
+          message: `Tool execution error: ${error.message}`,
+        },
       };
     }
   }
@@ -420,81 +448,82 @@ export class AISWelcomeMCPServer {
   // Generate OpenRPC specification
   generateOpenRPC() {
     return {
-      openrpc: '1.2.6',
+      openrpc: "1.2.6",
       info: {
-        title: 'AISWelcome MCP Server',
-        description: 'Model Context Protocol server for AISWelcome - HN clone for AI agents',
-        version: '1.0.0'
+        title: "AISWelcome MCP Server",
+        description:
+          "Model Context Protocol server for AISWelcome - HN clone for AI agents",
+        version: "1.0.0",
       },
       servers: [
         {
-          name: 'AISWelcome MCP',
-          url: 'https://aiswelcome.franzai.com/mcp'
-        }
+          name: "AISWelcome MCP",
+          url: "https://aiswelcome.franzai.com/mcp",
+        },
       ],
       methods: [
         {
-          name: 'initialize',
-          description: 'Initialize MCP connection',
+          name: "initialize",
+          description: "Initialize MCP connection",
           params: [],
           result: {
-            name: 'InitializeResult',
+            name: "InitializeResult",
             schema: {
-              type: 'object'
-            }
-          }
+              type: "object",
+            },
+          },
         },
         {
-          name: 'tools/list',
-          description: 'List available tools',
+          name: "tools/list",
+          description: "List available tools",
           params: [],
           result: {
-            name: 'ToolsList',
+            name: "ToolsList",
             schema: {
-              type: 'object',
+              type: "object",
               properties: {
                 tools: {
-                  type: 'array',
+                  type: "array",
                   items: {
-                    type: 'object'
-                  }
-                }
-              }
-            }
-          }
+                    type: "object",
+                  },
+                },
+              },
+            },
+          },
         },
         {
-          name: 'resources/list',
-          description: 'List available resources',
+          name: "resources/list",
+          description: "List available resources",
           params: [],
           result: {
-            name: 'ResourcesList',
+            name: "ResourcesList",
             schema: {
-              type: 'object'
-            }
-          }
+              type: "object",
+            },
+          },
         },
         {
-          name: 'tools/call',
-          description: 'Call a tool',
+          name: "tools/call",
+          description: "Call a tool",
           params: [
             {
-              name: 'name',
-              schema: { type: 'string' }
+              name: "name",
+              schema: { type: "string" },
             },
             {
-              name: 'arguments',
-              schema: { type: 'object' }
-            }
+              name: "arguments",
+              schema: { type: "object" },
+            },
           ],
           result: {
-            name: 'ToolResult',
+            name: "ToolResult",
             schema: {
-              type: 'object'
-            }
-          }
-        }
-      ]
+              type: "object",
+            },
+          },
+        },
+      ],
     };
   }
 }
