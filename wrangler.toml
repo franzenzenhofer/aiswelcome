@@ -8,6 +8,20 @@ compatibility_flags = ["nodejs_compat"]
 pattern = "aiswelcome.franzai.com/*"
 zone_name = "franzai.com"
 
+# KV Namespaces
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "b56e1bb7a5c747e5925d3ae8f18511f3"
+
+# Durable Objects
+[[durable_objects.bindings]]
+name = "RATE_LIMITER"
+class_name = "RateLimiter"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["RateLimiter"]
+
 # Environment Variables
 [vars]
 ENVIRONMENT = "production"

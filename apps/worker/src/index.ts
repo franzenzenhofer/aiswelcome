@@ -74,19 +74,19 @@ export default {
     const url = new URL(request.url);
 
     // Get current user for all requests
-    const currentUser = await getCurrentUser(request);
+    const currentUser = await getCurrentUser(request, env);
 
     // Authentication routes
     if (url.pathname === "/login") {
-      return handleLogin(request);
+      return handleLogin(request, env);
     }
 
     if (url.pathname === "/register") {
-      return handleRegister(request);
+      return handleRegister(request, env);
     }
 
     if (url.pathname === "/logout") {
-      return handleLogout(request);
+      return handleLogout(request, env);
     }
 
     // Forgot password page
@@ -135,7 +135,7 @@ export default {
     }
 
     if (url.pathname === "/user") {
-      return handleUserProfile(request);
+      return handleUserProfile(request, env);
     }
 
     // Comment submission
@@ -154,7 +154,7 @@ export default {
       }
 
       // Check rate limit
-      const authService = new AuthService();
+      const authService = new AuthService(env);
       const canComment = await authService.checkRateLimit(currentUser.id, "comment");
       if (!canComment) {
         return new Response(
@@ -278,7 +278,7 @@ export default {
         }
 
         // Check rate limit
-        const authService = new AuthService();
+        const authService = new AuthService(env);
         const canSubmit = await authService.checkRateLimit(
           currentUser.id,
           "story",
@@ -385,7 +385,7 @@ export default {
           }
 
           // Check rate limit
-          const authService = new AuthService();
+          const authService = new AuthService(env);
           const canComment = await authService.checkRateLimit(
             currentUser.id,
             "comment",
@@ -490,7 +490,7 @@ export default {
         story.points++;
 
         // Award karma to story author
-        const authService = new AuthService();
+        const authService = new AuthService(env);
         const author = await authService.getUserByUsername(story.user);
         if (author) {
           await authService.updateKarma(author.id, 1);
@@ -653,7 +653,7 @@ export default {
 
         if (title) {
           // Check rate limit
-          const authService = new AuthService();
+          const authService = new AuthService(env);
           const canSubmit = await authService.checkRateLimit(
             currentUser.id,
             "story",
@@ -843,7 +843,7 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
             </form>
           ` : '<p><a href="/login">Login</a> to comment</p>'}
           <div class="comments" style="margin-top: 20px;">
-            ${story.comments.map(comment => `
+            ${story.comments.map((comment: any) => `
               <div class="comment" style="margin: 10px 0; padding: 10px; background: #f6f6f6;">
                 <div class="comment-header" style="font-size: 12px; color: #666;">
                   <span class="vote-arrow" style="cursor: pointer;">▲</span>
@@ -852,7 +852,7 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
                 <div class="comment-text" style="margin-top: 5px;">${comment.text}</div>
                 ${comment.children ? `
                   <div class="replies" style="margin-left: 20px; border-left: 2px solid #ddd; padding-left: 10px;">
-                    ${comment.children.map(reply => `
+                    ${comment.children.map((reply: any) => `
                       <div class="comment" style="margin: 10px 0;">
                         <div class="comment-header" style="font-size: 12px; color: #666;">
                           ${reply.user} • ${reply.points} points

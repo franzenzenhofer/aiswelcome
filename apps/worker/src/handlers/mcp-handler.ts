@@ -15,7 +15,7 @@ export async function handleMCPRequest(
   ) {
     try {
       const body = (await request.json()) as any;
-      const user = await getCurrentUser(request);
+      const user = await getCurrentUser(request, env);
       const response = await mcpServer.handleRequest(body, env, user);
 
       return new Response(JSON.stringify(response), {
@@ -54,7 +54,7 @@ export async function handleMCPRequest(
 
   // Handle documentation page
   if (request.method === "GET") {
-    return renderMCPDocumentation(await getCurrentUser(request));
+    return renderMCPDocumentation(await getCurrentUser(request, env));
   }
 
   return new Response("Method not allowed", { status: 405 });

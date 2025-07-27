@@ -1,6 +1,7 @@
 import { hashPassword, verifyPassword, generateSessionId } from "./crypto";
 import { AUTH_CONFIG, FORBIDDEN_USERNAMES, AUTH_ERRORS } from "./constants";
 import { storage } from "../storage/inmemory";
+import { KVSessionStorage } from "../storage/kv-sessions";
 
 export interface User {
   id: number;
@@ -24,6 +25,13 @@ export interface Session {
 }
 
 export class AuthService {
+  private kvSessions?: KVSessionStorage;
+
+  constructor(env?: { SESSIONS?: KVNamespace }) {
+    if (env?.SESSIONS) {
+      this.kvSessions = new KVSessionStorage(env.SESSIONS);
+    }
+  }
   async register(
     username: string,
     password: string,
@@ -91,23 +99,45 @@ export class AuthService {
   }
 
   async logout(sessionId: string): Promise<void> {
-    await storage.deleteSession(sessionId);
+    if (this.kvSessions) {
+      await this.kvSessions.deleteSession(sessionId);
+    } else {
+      await storage.deleteSession(sessionId);
+    }
   }
 
   async getSession(sessionId: string): Promise<Session | null> {
-    const sessionData = await storage.getSession(sessionId);
-    if (!sessionData) return null;
+    let sessionData;
+    
+    if (this.kvSessions) {
+      const kvSession = await this.kvSessions.getSession(sessionId);
+      if (!kvSession) return null;
+      
+      const user = await storage.getUserById(kvSession.user_id);
+      if (!user) return null;
 
-    const user = await storage.getUserById(sessionData.user_id);
-    if (!user) return null;
+      return {
+        id: kvSession.id,
+        user_id: kvSession.user_id,
+        username: user.username,
+        is_admin: user.is_admin,
+        expires_at: kvSession.expires_at,
+      };
+    } else {
+      sessionData = await storage.getSession(sessionId);
+      if (!sessionData) return null;
 
-    return {
-      id: sessionData.id,
-      user_id: sessionData.user_id,
-      username: user.username,
-      is_admin: user.is_admin,
-      expires_at: sessionData.expires_at,
-    };
+      const user = await storage.getUserById(sessionData.user_id);
+      if (!user) return null;
+
+      return {
+        id: sessionData.id,
+        user_id: sessionData.user_id,
+        username: user.username,
+        is_admin: user.is_admin,
+        expires_at: sessionData.expires_at,
+      };
+    }
   }
 
   async getUserById(id: number): Promise<User | null> {
@@ -164,14 +194,29 @@ export class AuthService {
     const sessionId = generateSessionId();
     const expiresAt =
       Math.floor(Date.now() / 1000) + AUTH_CONFIG.SESSION_DURATION / 1000;
+    const createdAt = Math.floor(Date.now() / 1000);
 
-    await storage.createSession({
+    const sessionData = {
       id: sessionId,
       user_id: user.id,
+      username: user.username,
+      created_at: createdAt,
       expires_at: expiresAt,
       ip_address: ip,
       user_agent: userAgent,
-    });
+    };
+
+    if (this.kvSessions) {
+      await this.kvSessions.createSession(sessionData);
+    } else {
+      await storage.createSession({
+        id: sessionId,
+        user_id: user.id,
+        expires_at: expiresAt,
+        ip_address: ip,
+        user_agent: userAgent,
+      });
+    }
 
     return {
       id: sessionId,

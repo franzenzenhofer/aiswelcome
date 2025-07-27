@@ -2,8 +2,8 @@ import { AuthService } from "../auth/service";
 import { AUTH_CONFIG } from "../auth/constants";
 import { htmlTemplate } from "../templates/html-layout";
 
-export async function handleLogin(request: Request): Promise<Response> {
-  const authService = new AuthService();
+export async function handleLogin(request: Request, env: any): Promise<Response> {
+  const authService = new AuthService(env);
 
   if (request.method === "GET") {
     return renderLoginPage();
@@ -36,8 +36,8 @@ export async function handleLogin(request: Request): Promise<Response> {
   return new Response("Method not allowed", { status: 405 });
 }
 
-export async function handleRegister(request: Request): Promise<Response> {
-  const authService = new AuthService();
+export async function handleRegister(request: Request, env: any): Promise<Response> {
+  const authService = new AuthService(env);
 
   if (request.method === "GET") {
     return renderRegisterPage();
@@ -73,8 +73,8 @@ export async function handleRegister(request: Request): Promise<Response> {
   return new Response("Method not allowed", { status: 405 });
 }
 
-export async function handleLogout(request: Request): Promise<Response> {
-  const authService = new AuthService();
+export async function handleLogout(request: Request, env: any): Promise<Response> {
+  const authService = new AuthService(env);
   const sessionId = getSessionFromRequest(request);
 
   if (sessionId) {
@@ -90,7 +90,7 @@ export async function handleLogout(request: Request): Promise<Response> {
   });
 }
 
-export async function handleUserProfile(request: Request): Promise<Response> {
+export async function handleUserProfile(request: Request, env: any): Promise<Response> {
   const url = new URL(request.url);
   const username = url.searchParams.get("id");
 
@@ -98,7 +98,7 @@ export async function handleUserProfile(request: Request): Promise<Response> {
     return new Response("User not found", { status: 404 });
   }
 
-  const authService = new AuthService();
+  const authService = new AuthService(env);
   const user = await authService.getUserByUsername(username);
 
   if (!user) {
@@ -124,11 +124,11 @@ export function getSessionFromRequest(request: Request): string | null {
   return cookies[AUTH_CONFIG.COOKIE_NAME] || null;
 }
 
-export async function getCurrentUser(request: Request): Promise<any | null> {
+export async function getCurrentUser(request: Request, env: any): Promise<any | null> {
   const sessionId = getSessionFromRequest(request);
   if (!sessionId) return null;
 
-  const authService = new AuthService();
+  const authService = new AuthService(env);
   const session = await authService.getSession(sessionId);
   if (!session) return null;
 

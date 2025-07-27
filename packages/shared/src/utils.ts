@@ -122,7 +122,7 @@ export function parseMarkdownLite(text: string): string {
     // Convert newlines to <br>
     .replace(/\n/g, '<br>')
     // Simple code blocks (indented lines)
-    .replace(/^    (.+)$/gm, '<pre>$1</pre>')
+    .replace(/^{4}(.+)$/gm, '<pre>$1</pre>')
     // Italic
     .replace(/\*([^*]+)\*/g, '<i>$1</i>');
 }
