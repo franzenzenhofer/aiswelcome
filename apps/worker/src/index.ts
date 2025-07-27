@@ -515,6 +515,7 @@ export default {
             "GET /api/v1/health",
             "GET /api/v1/stories",
             "POST /api/v1/submit (auth required)",
+            "POST /api/v1/comment (auth required)",
             "POST /api/v1/vote/:id (auth required)",
           ],
         }),
@@ -935,6 +936,93 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
 
       return new Response(
         htmlTemplate(content, "Newest | AISWelcome", currentUser),
+        {
+          headers: { "Content-Type": "text/html" },
+        }
+      );
+    }
+
+    // Ask HN page
+    if (url.pathname === "/ask") {
+      const askStories = Array.from(stories.values())
+        .filter(s => s.title.toLowerCase().startsWith("ask hn:"))
+        .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+
+      const storiesHtml = askStories
+        .map(
+          (story, index) => `
+        <div class="story">
+          <span class="story-rank">${index + 1}.</span>
+          ${
+            currentUser && !story.voters.has(currentUser.username)
+              ? `<span class="vote-arrow" onclick="vote(${story.id})" title="upvote"></span>`
+              : '<span style="display: inline-block; width: 14px;"></span>'
+          }
+          <span class="story-title">
+            <a href="/item?id=${story.id}">${story.title}</a>
+          </span>
+          <div class="story-meta">
+            ${story.points} points by <a href="/user?id=${story.user}">${story.user}</a> ${timeAgo(story.time)} |
+            <a href="/item?id=${story.id}">${story.comments.length} comments</a>
+          </div>
+        </div>
+      `,
+        )
+        .join("");
+
+      const content = `
+        <h2>Ask HN</h2>
+        ${storiesHtml || '<p>No Ask HN stories yet. <a href="/submit">Submit</a> one!</p>'}
+      `;
+
+      return new Response(
+        htmlTemplate(content, "Ask | AISWelcome", currentUser),
+        {
+          headers: { "Content-Type": "text/html" },
+        }
+      );
+    }
+
+    // Show HN page
+    if (url.pathname === "/show") {
+      const showStories = Array.from(stories.values())
+        .filter(s => s.title.toLowerCase().startsWith("show hn:"))
+        .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+
+      const storiesHtml = showStories
+        .map(
+          (story, index) => `
+        <div class="story">
+          <span class="story-rank">${index + 1}.</span>
+          ${
+            currentUser && !story.voters.has(currentUser.username)
+              ? `<span class="vote-arrow" onclick="vote(${story.id})" title="upvote"></span>`
+              : '<span style="display: inline-block; width: 14px;"></span>'
+          }
+          <span class="story-title">
+            ${
+              story.url
+                ? `<a href="${story.url}">${story.title}</a>`
+                : `<a href="/item?id=${story.id}">${story.title}</a>`
+            }
+            ${story.domain ? `<span class="story-domain">(${story.domain})</span>` : ""}
+          </span>
+          <div class="story-meta">
+            ${story.points} points by <a href="/user?id=${story.user}">${story.user}</a> ${timeAgo(story.time)} |
+            <a href="/item?id=${story.id}">${story.comments.length} comments</a>
+          </div>
+        </div>
+      `,
+        )
+        .join("");
+
+      const content = `
+        <h2>Show HN</h2>
+        ${storiesHtml || '<p>No Show HN stories yet. <a href="/submit">Submit</a> one!</p>'}
+      `;
+
+      return new Response(
+        htmlTemplate(content, "Show | AISWelcome", currentUser),
         {
           headers: { "Content-Type": "text/html" },
         }
