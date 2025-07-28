@@ -64,15 +64,25 @@ function getDomain(url: string): string {
 function formatText(text: string): string {
   if (!text) return "";
   
-  // Convert newlines to HTML breaks and handle basic formatting
-  return text
-    .replace(/\n\n/g, '</p><p>')  // Double newlines become paragraph breaks
-    .replace(/\n/g, '<br>')       // Single newlines become line breaks
-    .replace(/^/, '<p>')          // Start with paragraph
-    .replace(/$/, '</p>')         // End with paragraph
-    .replace(/<p><\/p>/g, '')     // Remove empty paragraphs
-    .replace(/<p><br>/g, '<p>')   // Clean up paragraph starts
-    .replace(/<br><\/p>/g, '</p>'); // Clean up paragraph ends
+  // Escape HTML first, then convert newlines to proper HTML
+  const escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+  
+  // Convert newlines to HTML breaks and paragraphs
+  return escaped
+    .split('\n\n')               // Split on double newlines for paragraphs
+    .map(paragraph => {
+      if (paragraph.trim()) {
+        return '<p>' + paragraph.replace(/\n/g, '<br>') + '</p>';
+      }
+      return '';
+    })
+    .filter(p => p)              // Remove empty paragraphs
+    .join('');
 }
 
 export default {
