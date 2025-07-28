@@ -65,7 +65,7 @@ function formatText(text: string): string {
   if (!text) return "";
   
   // First convert escaped newlines (\n) to actual newlines, then handle actual newlines
-  let processedText = text
+  const processedText = text
     .replace(/\\n/g, '\n')       // Convert \n to actual newlines
     .replace(/\\t/g, '\t')       // Convert \t to actual tabs
     .replace(/\\r/g, '\r');      // Convert \r to actual carriage returns
@@ -212,8 +212,9 @@ export default {
         await storage.createComment({
           user_id: currentUser.id,
           story_id: storyId,
-          parent_id: parentId ? parseInt(parentId) : null,
+          parent_id: parentId ? parseInt(parentId) : undefined,
           text: text.trim(),
+          points: 1,
         });
         
         // Increment rate limit
@@ -336,7 +337,7 @@ export default {
             );
           }
 
-          await storage.createStory({
+          const story = await storage.createStory({
             title,
             url: storyUrl,
             text,
@@ -439,6 +440,7 @@ export default {
             story_id,
             parent_id: parent_id || undefined,
             text: text.trim(),
+            points: 1,
           });
 
           await authService.incrementRateLimit(currentUser.id, "comment");

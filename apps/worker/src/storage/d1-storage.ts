@@ -207,6 +207,7 @@ export class D1Storage {
       item_id: storyId,
       item_type: "story",
       vote_type: "up",
+      created_at: Math.floor(Date.now() / 1000),
     });
 
     // Update story points

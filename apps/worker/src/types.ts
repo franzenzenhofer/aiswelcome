@@ -57,6 +57,8 @@ export interface Story {
   username?: string;
   points: number;
   created_at: number;
+  domain?: string | null;
+  is_dead?: boolean;
   is_deleted?: boolean;
 }
 
