@@ -240,12 +240,17 @@ export const htmlTemplate = (
     }
     .vote-arrow {
       display: inline-block;
-      width: 10px;
-      height: 10px;
-      border: 0;
-      margin: 0 4px 0 2px;
-      background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAQklEQVR42mPwcnL6z8DA8B8IO4H4P4h9FojPwAX/g8RB4kB1YPX/waKg4r/oYqDiMyA+Ck8+CmIiC4DEQeJAdQDpTxMLDPplvAAAAABJRU5ErkJggg==') no-repeat;
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-bottom: 8px solid #666;
+      margin: 0 4px 2px 2px;
       cursor: pointer;
+      vertical-align: middle;
+    }
+    .vote-arrow:hover {
+      border-bottom-color: #ff6600;
     }
     .admin-badge {
       background: #ff6600;
