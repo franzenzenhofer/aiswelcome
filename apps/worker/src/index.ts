@@ -64,8 +64,14 @@ function getDomain(url: string): string {
 function formatText(text: string): string {
   if (!text) return "";
   
-  // Escape HTML first, then convert newlines to proper HTML
-  const escaped = text
+  // First convert escaped newlines (\n) to actual newlines, then handle actual newlines
+  let processedText = text
+    .replace(/\\n/g, '\n')       // Convert \n to actual newlines
+    .replace(/\\t/g, '\t')       // Convert \t to actual tabs
+    .replace(/\\r/g, '\r');      // Convert \r to actual carriage returns
+  
+  // Escape HTML after newline conversion
+  const escaped = processedText
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
