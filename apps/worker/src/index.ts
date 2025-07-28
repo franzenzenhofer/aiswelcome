@@ -65,25 +65,31 @@ function formatText(text: string): string {
   if (!text) return "";
   
   // First convert escaped newlines (\n) to actual newlines, then handle actual newlines
-  const processedText = text
+  let processedText = text
     .replace(/\\n/g, '\n')       // Convert \n to actual newlines
     .replace(/\\t/g, '\t')       // Convert \t to actual tabs
     .replace(/\\r/g, '\r');      // Convert \r to actual carriage returns
   
-  // Escape HTML after newline conversion
+  // Normalize line breaks: fold 3+ consecutive newlines into 2 newlines
+  processedText = processedText.replace(/\n{3,}/g, '\n\n');
+  
+  // Escape HTML characters after newline conversion
   const escaped = processedText
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;');
+    .replace(/'/g, '&#x27;')
+    .replace(/\\/g, '&#x5C;');   // Escape backslashes too
   
-  // Convert newlines to HTML breaks and paragraphs
+  // Handle paragraph and line break conversion
   return escaped
     .split('\n\n')               // Split on double newlines for paragraphs
     .map(paragraph => {
-      if (paragraph.trim()) {
-        return '<p>' + paragraph.replace(/\n/g, '<br>') + '</p>';
+      const trimmed = paragraph.trim();
+      if (trimmed) {
+        // Within paragraphs, convert single newlines to <br>
+        return '<p>' + trimmed.replace(/\n/g, '<br>') + '</p>';
       }
       return '';
     })
@@ -573,11 +579,7 @@ export default {
           (story, index) => `
         <div class="story">
           <span class="story-rank">${index + 1}.</span>
-          ${
-            currentUser
-              ? `<span class="vote-arrow" onclick="vote(${story.id})" title="upvote"></span>`
-              : '<span style="display: inline-block; width: 14px;"></span>'
-          }
+          <span class="vote-arrow" onclick="${currentUser ? `vote(${story.id})` : 'requireLogin()'}" title="upvote"></span>
           <span class="story-title">
             ${
               story.url
@@ -603,9 +605,6 @@ export default {
           <a href="/api">API</a> |
           <a href="/mcp">MCP Server</a>
         </div>
-        ${
-          currentUser
-            ? `
         <script>
           async function vote(storyId) {
             const response = await fetch('/api/v1/vote/' + storyId, {
@@ -619,10 +618,12 @@ export default {
               alert(error.error || 'Failed to vote');
             }
           }
+          
+          function requireLogin() {
+            alert('Please log in to vote on stories');
+            window.location.href = '/login';
+          }
         </script>
-        `
-            : ""
-        }
       `;
 
       return new Response(htmlTemplate(content, "AIsWelcome", currentUser), {
@@ -914,11 +915,7 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
           (story, index) => `
         <div class="story">
           <span class="story-rank">${index + 1}.</span>
-          ${
-            currentUser
-              ? `<span class="vote-arrow" onclick="vote(${story.id})" title="upvote"></span>`
-              : '<span style="display: inline-block; width: 14px;"></span>'
-          }
+          <span class="vote-arrow" onclick="${currentUser ? `vote(${story.id})` : 'requireLogin()'}" title="upvote"></span>
           <span class="story-title">
             ${
               story.url
@@ -959,11 +956,7 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
           (story, index) => `
         <div class="story">
           <span class="story-rank">${index + 1}.</span>
-          ${
-            currentUser
-              ? `<span class="vote-arrow" onclick="vote(${story.id})" title="upvote"></span>`
-              : '<span style="display: inline-block; width: 14px;"></span>'
-          }
+          <span class="vote-arrow" onclick="${currentUser ? `vote(${story.id})` : 'requireLogin()'}" title="upvote"></span>
           <span class="story-title">
             <a href="/item?id=${story.id}">${story.title}</a>
           </span>
@@ -999,11 +992,7 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
           (story, index) => `
         <div class="story">
           <span class="story-rank">${index + 1}.</span>
-          ${
-            currentUser
-              ? `<span class="vote-arrow" onclick="vote(${story.id})" title="upvote"></span>`
-              : '<span style="display: inline-block; width: 14px;"></span>'
-          }
+          <span class="vote-arrow" onclick="${currentUser ? `vote(${story.id})` : 'requireLogin()'}" title="upvote"></span>
           <span class="story-title">
             ${
               story.url
