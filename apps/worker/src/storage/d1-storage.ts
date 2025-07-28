@@ -101,9 +101,18 @@ export class D1Storage {
     const id = Math.floor(Math.random() * 1000000000);
     const createdAt = Math.floor(Date.now() / 1000);
     
+    let domain = null;
+    if (story.url) {
+      try {
+        domain = new URL(story.url).hostname.replace(/^www\./, '');
+      } catch {
+        domain = null;
+      }
+    }
+    
     await this.db.prepare(`
-      INSERT INTO stories (id, title, url, text, user_id, points, created_at, is_deleted)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO stories (id, title, url, text, user_id, points, created_at, domain, is_dead, is_deleted)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       id,
       story.title,
@@ -112,6 +121,8 @@ export class D1Storage {
       story.user_id,
       story.points || 1,
       createdAt,
+      domain,
+      false,
       false
     ).run();
 
