@@ -267,20 +267,32 @@ export default {
 
       // API login endpoint
       if (url.pathname === "/api/v1/login" && request.method === "POST") {
+        let body;
         try {
-          const body = await request.json();
-          const { username, password } = body;
+          body = await request.json();
+        } catch (jsonError) {
+          return new Response(
+            JSON.stringify({
+              ok: false,
+              error: "Invalid JSON in request body",
+            }),
+            { status: 400, headers },
+          );
+        }
 
-          if (!username || !password) {
-            return new Response(
-              JSON.stringify({
-                ok: false,
-                error: "Username and password required",
-              }),
-              { status: 400, headers },
-            );
-          }
+        const { username, password } = body;
 
+        if (!username || !password) {
+          return new Response(
+            JSON.stringify({
+              ok: false,
+              error: "Username and password required",
+            }),
+            { status: 400, headers },
+          );
+        }
+
+        try {
           const authService = new AuthService(env);
           const loginResult = await authService.login(username, password);
 
@@ -312,13 +324,14 @@ export default {
               { status: 401, headers },
             );
           }
-        } catch (error) {
+        } catch (authError: any) {
+          console.error("Login error:", authError);
           return new Response(
             JSON.stringify({
-              ok: false,
-              error: "Invalid JSON in request body",
+              ok: false, 
+              error: `Authentication service error: ${authError.message}`,
             }),
-            { status: 400, headers },
+            { status: 500, headers },
           );
         }
       }
