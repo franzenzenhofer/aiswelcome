@@ -9,6 +9,8 @@ import {
 } from "./handlers/auth-handlers";
 import { handleMCPRequest } from "./handlers/mcp-handler";
 import { htmlTemplate } from "./templates/html-layout";
+import { getStorage } from "./storage";
+import { D1Storage } from "./storage/d1-storage";
 
 export interface Env {
   DB: D1Database;
@@ -71,7 +73,15 @@ export default {
     env: Env,
     _ctx: ExecutionContext,
   ): Promise<Response> {
-    initializeData();
+    // Initialize storage (D1 if available, in-memory fallback)
+    const storage = getStorage(env.DB);
+    
+    // Initialize admin user if using D1
+    if (storage instanceof D1Storage) {
+      await storage.initializeAdminUser();
+    } else {
+      initializeData();
+    }
 
     const url = new URL(request.url);
 
