@@ -294,36 +294,26 @@ export default {
 
         try {
           const authService = new AuthService(env);
-          const loginResult = await authService.login(username, password);
+          const session = await authService.login(username, password, request);
 
-          if (loginResult.success && loginResult.sessionId) {
-            // Set session cookie
-            return new Response(
-              JSON.stringify({
-                ok: true,
-                message: "Login successful",
-                user: {
-                  username: loginResult.user?.username,
-                  karma: loginResult.user?.karma,
-                },
-              }),
-              {
-                status: 200,
-                headers: {
-                  ...headers,
-                  "Set-Cookie": `aiswelcome_session=${loginResult.sessionId}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=86400`,
-                },
+          // Login was successful if we get here (otherwise it would throw)
+          return new Response(
+            JSON.stringify({
+              ok: true,
+              message: "Login successful",
+              user: {
+                username: session.username,
+                karma: 0, // We don't store karma in session, would need to fetch user
               },
-            );
-          } else {
-            return new Response(
-              JSON.stringify({
-                ok: false,
-                error: "Invalid username or password",
-              }),
-              { status: 401, headers },
-            );
-          }
+            }),
+            {
+              status: 200,
+              headers: {
+                ...headers,
+                "Set-Cookie": `aiswelcome_session=${session.id}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=86400`,
+              },
+            },
+          );
         } catch (authError: any) {
           console.error("Login error:", authError);
           return new Response(
