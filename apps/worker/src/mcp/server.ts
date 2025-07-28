@@ -386,12 +386,27 @@ export class AIsWelcomeMCPServer {
 
     // Handle tool execution
     try {
+      const { getStorage } = await import("../storage");
+      const storage = getStorage(_env.DB);
+      
       switch (toolName) {
         case "getStories":
+          const limit = args.limit || 30;
+          const sort = args.sort || "top";
+          const storiesData = await storage.getStories(1, limit, sort as "top" | "new" | "ask" | "show");
           return {
             result: {
-              stories: [],
-              message: "Tool endpoint - integrate with database",
+              stories: storiesData.map((story: any) => ({
+                id: story.id,
+                title: story.title,
+                url: story.url,
+                text: story.text,
+                user: story.username,
+                points: story.points,
+                comments: story.comment_count || 0,
+                time: story.created_at,
+              })),
+              count: storiesData.length,
             },
           };
 
@@ -404,13 +419,39 @@ export class AIsWelcomeMCPServer {
               },
             };
           }
-          return {
-            result: {
-              success: true,
-              storyId: 1,
-              message: "Story submitted successfully",
-            },
-          };
+          try {
+            const story = await storage.createStory({
+              title: args.title,
+              url: args.url || undefined,
+              text: args.text || undefined,
+              user_id: user.id,
+              points: 1,
+              domain: args.url ? new URL(args.url).hostname.replace(/^www\./, '') : null,
+              is_dead: false,
+              is_deleted: false,
+            });
+            return {
+              result: {
+                success: true,
+                story: {
+                  id: story.id,
+                  title: story.title,
+                  url: story.url,
+                  user: user.username,
+                  points: story.points,
+                  time: story.created_at,
+                },
+                message: "Story submitted successfully",
+              },
+            };
+          } catch (error: any) {
+            return {
+              error: {
+                code: -32603,
+                message: `Failed to submit story: ${error.message}`,
+              },
+            };
+          }
 
         case "voteStory":
           if (!user) {
@@ -421,17 +462,192 @@ export class AIsWelcomeMCPServer {
               },
             };
           }
-          return {
-            result: {
-              success: true,
-              newScore: 1,
-            },
-          };
+          try {
+            const success = await storage.voteStory(user.id, args.id);
+            if (success) {
+              const story = await storage.getStory(args.id);
+              return {
+                result: {
+                  success: true,
+                  points: story?.points || 0,
+                },
+              };
+            } else {
+              return {
+                result: {
+                  success: false,
+                  message: "Already voted or story not found",
+                },
+              };
+            }
+          } catch (error: any) {
+            return {
+              error: {
+                code: -32603,
+                message: `Failed to vote: ${error.message}`,
+              },
+            };
+          }
+
+        case "getStory":
+          try {
+            const story = await storage.getStory(args.id);
+            if (!story) {
+              return {
+                error: {
+                  code: -32602,
+                  message: "Story not found",
+                },
+              };
+            }
+            return {
+              result: {
+                story: {
+                  id: story.id,
+                  title: story.title,
+                  url: story.url,
+                  text: story.text,
+                  user: story.username,
+                  points: story.points,
+                  comments: story.comment_count || 0,
+                  time: story.created_at,
+                },
+              },
+            };
+          } catch (error: any) {
+            return {
+              error: {
+                code: -32603,
+                message: `Failed to get story: ${error.message}`,
+              },
+            };
+          }
+
+        case "searchStories":
+          try {
+            const stories = await storage.searchStories(args.query, args.limit || 20);
+            return {
+              result: {
+                stories: stories.map((story: any) => ({
+                  id: story.id,
+                  title: story.title,
+                  url: story.url,
+                  text: story.text,
+                  user: story.username,
+                  points: story.points,
+                  comments: story.comment_count || 0,
+                  time: story.created_at,
+                })),
+                count: stories.length,
+              },
+            };
+          } catch (error: any) {
+            return {
+              error: {
+                code: -32603,
+                message: `Search failed: ${error.message}`,
+              },
+            };
+          }
+
+        case "getUserProfile":
+          try {
+            const profile = await storage.getUserByUsername(args.username);
+            if (!profile) {
+              return {
+                error: {
+                  code: -32602,
+                  message: "User not found",
+                },
+              };
+            }
+            return {
+              result: {
+                user: {
+                  username: profile.username,
+                  karma: profile.karma,
+                  created: profile.created_at,
+                },
+              },
+            };
+          } catch (error: any) {
+            return {
+              error: {
+                code: -32603,
+                message: `Failed to get user profile: ${error.message}`,
+              },
+            };
+          }
+
+        case "getComments":
+          try {
+            const comments = await storage.getComments(args.storyId);
+            return {
+              result: {
+                comments: comments.map((comment: any) => ({
+                  id: comment.id,
+                  text: comment.text,
+                  user: comment.username,
+                  points: comment.points,
+                  time: comment.created_at,
+                  parent: comment.parent_id,
+                })),
+                count: comments.length,
+              },
+            };
+          } catch (error: any) {
+            return {
+              error: {
+                code: -32603,
+                message: `Failed to get comments: ${error.message}`,
+              },
+            };
+          }
+
+        case "postComment":
+          if (!user) {
+            return {
+              error: {
+                code: -32603,
+                message: "Authentication required",
+              },
+            };
+          }
+          try {
+            const comment = await storage.createComment({
+              story_id: args.storyId,
+              parent_id: args.parentId || undefined,
+              user_id: user.id,
+              text: args.text,
+              points: 1,
+            });
+            return {
+              result: {
+                success: true,
+                comment: {
+                  id: comment.id,
+                  text: comment.text,
+                  user: user.username,
+                  points: comment.points,
+                  time: comment.created_at,
+                },
+                message: "Comment posted successfully",
+              },
+            };
+          } catch (error: any) {
+            return {
+              error: {
+                code: -32603,
+                message: `Failed to post comment: ${error.message}`,
+              },
+            };
+          }
 
         default:
           return {
-            result: {
-              message: `Tool ${toolName} - not yet implemented`,
+            error: {
+              code: -32601,
+              message: `Unknown tool: ${toolName}`,
             },
           };
       }
