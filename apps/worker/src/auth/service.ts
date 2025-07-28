@@ -1,7 +1,8 @@
 import { hashPassword, verifyPassword, generateSessionId } from "./crypto";
 import { AUTH_CONFIG, FORBIDDEN_USERNAMES, AUTH_ERRORS } from "./constants";
-import { storage } from "../storage/inmemory";
+import { getStorage } from "../storage";
 import { KVSessionStorage } from "../storage/kv-sessions";
+import type { D1Database } from "@cloudflare/workers-types";
 
 export interface User {
   id: number;
@@ -26,11 +27,13 @@ export interface Session {
 
 export class AuthService {
   private kvSessions?: KVSessionStorage;
+  private storage: any;
 
-  constructor(env?: { SESSIONS?: KVNamespace }) {
+  constructor(env?: { SESSIONS?: KVNamespace; DB?: D1Database }) {
     if (env?.SESSIONS) {
       this.kvSessions = new KVSessionStorage(env.SESSIONS);
     }
+    this.storage = getStorage(env?.DB);
   }
   async register(
     username: string,
@@ -50,7 +53,7 @@ export class AuthService {
     }
 
     // Check if username exists
-    const existing = await storage.getUserByUsername(username);
+    const existing = await this.storage.getUserByUsername(username);
     if (existing) {
       throw new Error(AUTH_ERRORS.USERNAME_TAKEN);
     }
@@ -59,7 +62,7 @@ export class AuthService {
     const passwordHash = await hashPassword(password);
 
     // Create user
-    const user = await storage.createUser({
+    const user = await this.storage.createUser({
       username,
       password_hash: passwordHash,
       email,
@@ -77,7 +80,7 @@ export class AuthService {
     const userAgent = request.headers.get("User-Agent") || "unknown";
 
     // Get user
-    const user = await storage.getUserByUsername(username);
+    const user = await this.storage.getUserByUsername(username);
     if (!user) {
       throw new Error(AUTH_ERRORS.INVALID_CREDENTIALS);
     }
@@ -102,7 +105,7 @@ export class AuthService {
     if (this.kvSessions) {
       await this.kvSessions.deleteSession(sessionId);
     } else {
-      await storage.deleteSession(sessionId);
+      await this.storage.deleteSession(sessionId);
     }
   }
 
@@ -113,7 +116,7 @@ export class AuthService {
       const kvSession = await this.kvSessions.getSession(sessionId);
       if (!kvSession) return null;
       
-      const user = await storage.getUserById(kvSession.user_id);
+      const user = await this.storage.getUserById(kvSession.user_id);
       if (!user) return null;
 
       return {
@@ -124,10 +127,10 @@ export class AuthService {
         expires_at: kvSession.expires_at,
       };
     } else {
-      sessionData = await storage.getSession(sessionId);
+      sessionData = await this.storage.getSession(sessionId);
       if (!sessionData) return null;
 
-      const user = await storage.getUserById(sessionData.user_id);
+      const user = await this.storage.getUserById(sessionData.user_id);
       if (!user) return null;
 
       return {
@@ -141,15 +144,15 @@ export class AuthService {
   }
 
   async getUserById(id: number): Promise<User | null> {
-    return storage.getUserById(id);
+    return this.storage.getUserById(id);
   }
 
   async getUserByUsername(username: string): Promise<User | null> {
-    return storage.getUserByUsername(username);
+    return this.storage.getUserByUsername(username);
   }
 
   async updateKarma(userId: number, delta: number): Promise<void> {
-    await storage.updateUserKarma(userId, delta);
+    await this.storage.updateUserKarma(userId, delta);
   }
 
   async checkRateLimit(
@@ -157,7 +160,7 @@ export class AuthService {
     type: "story" | "comment",
   ): Promise<boolean> {
     const today = new Date().toISOString().split("T")[0]!;
-    const limit = await storage.getRateLimit(userId, today);
+    const limit = await this.storage.getRateLimitByDate(userId, today);
 
     if (!limit) return true; // First action of the day
 
@@ -183,7 +186,7 @@ export class AuthService {
     type: "story" | "comment",
   ): Promise<void> {
     const today = new Date().toISOString().split("T")[0]!;
-    await storage.updateRateLimit(userId, today, type);
+    await this.storage.updateRateLimitByDate(userId, today, type);
   }
 
   private async createSession(
@@ -209,7 +212,7 @@ export class AuthService {
     if (this.kvSessions) {
       await this.kvSessions.createSession(sessionData);
     } else {
-      await storage.createSession({
+      await this.storage.createSession({
         id: sessionId,
         user_id: user.id,
         expires_at: expiresAt,

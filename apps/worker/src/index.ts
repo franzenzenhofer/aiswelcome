@@ -11,8 +11,8 @@ import { handleMCPRequest } from "./handlers/mcp-handler";
 import { htmlTemplate } from "./templates/html-layout";
 
 export interface Env {
-  DB?: D1Database;
-  SESSIONS?: KVNamespace;
+  DB: D1Database;
+  SESSIONS: KVNamespace;
   RATE_LIMITER?: DurableObjectNamespace;
   ENVIRONMENT: string;
 }

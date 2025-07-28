@@ -70,6 +70,10 @@ export class InMemoryStorage {
   private storyIdCounter = 1;
   private commentIdCounter = 1;
 
+  generateId(): number {
+    return this.storyIdCounter++;
+  }
+
   constructor() {
     // Initialize with admin user
     this.createUser({
@@ -295,9 +299,21 @@ export class InMemoryStorage {
   }
 
   // Rate limiting
+  async getRateLimitByDate(userId: number, date: string): Promise<RateLimit | null> {
+    return this.getRateLimit(userId, date);
+  }
+
   async getRateLimit(userId: number, date: string): Promise<RateLimit | null> {
     const key = `${userId}-${date}`;
     return this.rateLimits.get(key) || null;
+  }
+
+  async updateRateLimitByDate(
+    userId: number,
+    date: string,
+    type: "story" | "comment",
+  ): Promise<void> {
+    await this.updateRateLimit(userId, date, type);
   }
 
   async updateRateLimit(

@@ -8,6 +8,12 @@ compatibility_flags = ["nodejs_compat"]
 pattern = "aiswelcome.franzai.com/*"
 zone_name = "franzai.com"
 
+# D1 Database
+[[d1_databases]]
+binding = "DB"
+database_name = "aiswelcome-db"
+database_id = "0882f8d9-0c8b-45bd-8640-1ced3a6e7d2d"
+
 # KV Namespaces
 [[kv_namespaces]]
 binding = "SESSIONS"
