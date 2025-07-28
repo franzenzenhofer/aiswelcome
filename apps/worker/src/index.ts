@@ -332,6 +332,61 @@ export default {
         }
       }
 
+      // API registration endpoint
+      if (url.pathname === "/api/v1/register" && request.method === "POST") {
+        let body;
+        try {
+          body = await request.json();
+        } catch (jsonError) {
+          return new Response(
+            JSON.stringify({
+              ok: false,
+              error: "Invalid JSON in request body",
+            }),
+            { status: 400, headers },
+          );
+        }
+
+        const { username, password, email } = body;
+
+        if (!username || !password) {
+          return new Response(
+            JSON.stringify({
+              ok: false,
+              error: "Username and password required",
+            }),
+            { status: 400, headers },
+          );
+        }
+
+        try {
+          const authService = new AuthService(env);
+          const user = await authService.register(username, password, email);
+
+          return new Response(
+            JSON.stringify({
+              ok: true,
+              message: "Registration successful",
+              user: {
+                username: user.username,
+                email: user.email,
+                karma: user.karma,
+              },
+            }),
+            { status: 201, headers },
+          );
+        } catch (authError: any) {
+          console.error("Registration error:", authError);
+          return new Response(
+            JSON.stringify({
+              ok: false,
+              error: authError.message || "Registration failed",
+            }),
+            { status: 400, headers },
+          );
+        }
+      }
+
       // Get stories
       if (url.pathname === "/api/v1/stories" && request.method === "GET") {
         const storiesData = await storage.getStories(1, 100, "top");
