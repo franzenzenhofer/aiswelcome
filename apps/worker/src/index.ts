@@ -445,22 +445,6 @@ export default {
             );
           }
 
-          // Check rate limit
-          const authService = new AuthService(env);
-          const canComment = await authService.checkRateLimit(
-            currentUser.id,
-            "comment",
-          );
-          if (!canComment) {
-            return new Response(
-              JSON.stringify({
-                ok: false,
-                error: AUTH_ERRORS.COMMENT_LIMIT_REACHED,
-              }),
-              { status: 429, headers },
-            );
-          }
-
           // Validation passed, create the comment
 
           const story = await storage.getStory(story_id);
@@ -481,9 +465,6 @@ export default {
             text: text.trim(),
             points: 1,
           });
-
-          await authService.incrementRateLimit(currentUser.id, "comment");
-          await authService.updateKarma(currentUser.id, 1);
 
           return new Response(
             JSON.stringify({
