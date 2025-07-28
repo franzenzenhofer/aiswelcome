@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS votes (
 -- Create indexes for votes
 CREATE INDEX idx_votes_item ON votes(item_id, item_type);
 CREATE INDEX idx_votes_created_at ON votes(created_at);
+CREATE INDEX idx_votes_user_item ON votes(user_id, item_id, item_type);
 
 -- Sessions table (backup for KV)
 CREATE TABLE IF NOT EXISTS sessions (

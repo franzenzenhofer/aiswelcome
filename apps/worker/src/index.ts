@@ -13,6 +13,8 @@ import { htmlTemplate } from "./templates/html-layout";
 export interface Env {
   DB: D1Database;
   SESSIONS: KVNamespace;
+  UPLOADS?: R2Bucket;
+  AVATARS?: R2Bucket;
   RATE_LIMITER?: DurableObjectNamespace;
   ENVIRONMENT: string;
 }

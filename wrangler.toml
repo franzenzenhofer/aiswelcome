@@ -19,6 +19,15 @@ database_id = "0882f8d9-0c8b-45bd-8640-1ced3a6e7d2d"
 binding = "SESSIONS"
 id = "b56e1bb7a5c747e5925d3ae8f18511f3"
 
+# R2 Buckets
+[[r2_buckets]]
+binding = "UPLOADS"
+bucket_name = "aiswelcome-uploads"
+
+[[r2_buckets]]
+binding = "AVATARS"
+bucket_name = "aiswelcome-avatars"
+
 # Durable Objects
 [[durable_objects.bindings]]
 name = "RATE_LIMITER"
