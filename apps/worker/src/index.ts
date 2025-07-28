@@ -619,9 +619,6 @@ export default {
           text,
           user_id: currentUser.id,
           points: 1,
-          domain: storyUrl ? getDomain(storyUrl) : null,
-          is_dead: false,
-          is_deleted: false,
         });
 
         // Increment rate limit
