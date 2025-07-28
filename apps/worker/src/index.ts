@@ -61,6 +61,20 @@ function getDomain(url: string): string {
   }
 }
 
+function formatText(text: string): string {
+  if (!text) return "";
+  
+  // Convert newlines to HTML breaks and handle basic formatting
+  return text
+    .replace(/\n\n/g, '</p><p>')  // Double newlines become paragraph breaks
+    .replace(/\n/g, '<br>')       // Single newlines become line breaks
+    .replace(/^/, '<p>')          // Start with paragraph
+    .replace(/$/, '</p>')         // End with paragraph
+    .replace(/<p><\/p>/g, '')     // Remove empty paragraphs
+    .replace(/<p><br>/g, '<p>')   // Clean up paragraph starts
+    .replace(/<br><\/p>/g, '</p>'); // Clean up paragraph ends
+}
+
 export default {
   async fetch(
     request: Request,
@@ -811,7 +825,7 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
         <div class="story-page">
           <h2>${story.title}</h2>
           ${story.url ? `<p><a href="${story.url}">${story.url}</a></p>` : ""}
-          ${story.text ? `<div class="story-text">${story.text}</div>` : ""}
+          ${story.text ? `<div class="story-text">${formatText(story.text)}</div>` : ""}
           <div class="story-meta">
             ${story.score} points by <a href="/user?id=${story.by}">${story.by}</a> ${timeAgo(story.created_at)}
           </div>
@@ -831,7 +845,7 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
                   <span class="vote-arrow" style="cursor: pointer;">▲</span>
                   ${comment.by} • ${comment.score} points • ${timeAgo(comment.created_at)}
                 </div>
-                <div class="comment-text" style="margin-top: 5px;">${comment.text}</div>
+                <div class="comment-text" style="margin-top: 5px;">${formatText(comment.text)}</div>
               </div>
             `).join('')}
           </div>
