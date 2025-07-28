@@ -364,22 +364,6 @@ export default {
           );
         }
 
-        // Check rate limit
-        const authService = new AuthService(env);
-        const canSubmit = await authService.checkRateLimit(
-          currentUser.id,
-          "story",
-        );
-        if (!canSubmit) {
-          return new Response(
-            JSON.stringify({
-              ok: false,
-              error: AUTH_ERRORS.STORY_LIMIT_REACHED,
-            }),
-            { status: 429, headers },
-          );
-        }
-
         try {
           const body = (await request.json()) as {
             title?: string;
@@ -408,12 +392,6 @@ export default {
             is_dead: false,
             is_deleted: false,
           });
-
-          // Increment rate limit
-          await authService.incrementRateLimit(currentUser.id, "story");
-
-          // Award karma for submission
-          await authService.updateKarma(currentUser.id, 1);
 
           const displayStory = mapStoryForDisplay(story);
           return new Response(
