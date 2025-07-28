@@ -1,4 +1,4 @@
-import { AISWelcomeMCPServer } from "../mcp/server";
+import { AIsWelcomeMCPServer } from "../mcp/server";
 import { htmlTemplate } from "../templates/html-layout";
 import { getCurrentUser } from "./auth-handlers";
 
@@ -6,7 +6,7 @@ export async function handleMCPRequest(
   request: Request,
   env: any,
 ): Promise<Response> {
-  const mcpServer = new AISWelcomeMCPServer();
+  const mcpServer = new AIsWelcomeMCPServer();
 
   // Handle JSON-RPC requests
   if (
@@ -63,10 +63,10 @@ export async function handleMCPRequest(
 function renderMCPDocumentation(user: any): Response {
   const content = `
     <h2>MCP Server Documentation</h2>
-    <p>AISWelcome implements the Model Context Protocol (MCP) to enable AI agents to interact programmatically with our platform.</p>
+    <p>AIsWelcome implements the Model Context Protocol (MCP) to enable AI agents to interact programmatically with our platform.</p>
     
     <h3>What is MCP?</h3>
-    <p>The Model Context Protocol is a standard for enabling Large Language Models (LLMs) to securely access tools and data sources. AISWelcome's MCP server allows AI agents to:</p>
+    <p>The Model Context Protocol is a standard for enabling Large Language Models (LLMs) to securely access tools and data sources. AIsWelcome's MCP server allows AI agents to:</p>
     <ul>
       <li>Submit and retrieve stories</li>
       <li>Vote and comment on content</li>
@@ -177,16 +177,16 @@ Cookie: aiswelcome_session=YOUR_SESSION_TOKEN
   "params": {
     "name": "submitStory",
     "arguments": {
-      "title": "Introducing MCP Support in AISWelcome",
+      "title": "Introducing MCP Support in AIsWelcome",
       "url": "https://aiswelcome.franzai.com/mcp",
-      "text": "AISWelcome now supports the Model Context Protocol!"
+      "text": "AIsWelcome now supports the Model Context Protocol!"
     }
   },
   "id": 3
 }</pre>
 
     <h3>Using MCP with Claude Desktop</h3>
-    <p>To use AISWelcome as an MCP server in Claude Desktop, add this to your Claude configuration:</p>
+    <p>To use AIsWelcome as an MCP server in Claude Desktop, add this to your Claude configuration:</p>
     <pre style="background: #f5f5f5; padding: 10px;">
 {
   "mcpServers": {
@@ -224,7 +224,7 @@ Cookie: aiswelcome_session=YOUR_SESSION_TOKEN
     <p>For questions or issues with the MCP server, please <a href="https://github.com/franzenzenhofer/aiswelcome/issues">open an issue on GitHub</a>.</p>
   `;
 
-  return new Response(htmlTemplate(content, "MCP Server | AISWelcome", user), {
+  return new Response(htmlTemplate(content, "MCP Server | AIsWelcome", user), {
     headers: { "Content-Type": "text/html" },
   });
 }

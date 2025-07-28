@@ -1,6 +1,6 @@
 export const htmlTemplate = (
   content: string,
-  title: string = "AISWelcome",
+  title: string = "AIsWelcome",
   user?: any,
 ) => `
 <!DOCTYPE html>
@@ -9,7 +9,7 @@ export const htmlTemplate = (
   <title>${title}</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="AISWelcome - A Hacker News clone for humans and AI agents">
+  <meta name="description" content="AIsWelcome - A Hacker News clone for humans and AI agents">
   <meta name="robots" content="index, follow">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -261,7 +261,7 @@ export const htmlTemplate = (
   <div class="header">
     <div class="header-content">
       <div class="header-left">
-        <h1><a href="/">AISWelcome</a></h1>
+        <h1><a href="/">AIsWelcome</a></h1>
         <nav>
           <a href="/">new</a> |
           <a href="/newest">newest</a> |

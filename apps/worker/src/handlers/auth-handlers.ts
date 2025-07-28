@@ -207,7 +207,7 @@ function renderLoginPage(error?: string): Response {
     </style>
   `;
 
-  return new Response(htmlTemplate(content, "Login | AISWelcome"), {
+  return new Response(htmlTemplate(content, "Login | AIsWelcome"), {
     headers: { "Content-Type": "text/html" },
   });
 }
@@ -324,7 +324,7 @@ function renderRegisterPage(error?: string): Response {
     </style>
   `;
 
-  return new Response(htmlTemplate(content, "Create Account | AISWelcome"), {
+  return new Response(htmlTemplate(content, "Create Account | AIsWelcome"), {
     headers: { "Content-Type": "text/html" },
   });
 }
@@ -411,7 +411,7 @@ function renderUserProfile(user: any): Response {
     </style>
   `;
 
-  return new Response(htmlTemplate(content, `${user.username} | AISWelcome`), {
+  return new Response(htmlTemplate(content, `${user.username} | AIsWelcome`), {
     headers: { "Content-Type": "text/html" },
   });
 }

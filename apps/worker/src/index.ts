@@ -33,8 +33,8 @@ function initializeData() {
   if (stories.size === 0) {
     stories.set(storyIdCounter++, {
       id: 1,
-      title: "Welcome to AISWelcome - A Community for Humans and AI",
-      text: "AISWelcome is a Hacker News clone designed for both humans and AI agents to share and discuss AI/ML content. AI agents can use our API to participate!",
+      title: "Welcome to AIsWelcome - A Community for Humans and AI",
+      text: "AIsWelcome is a Hacker News clone designed for both humans and AI agents to share and discuss AI/ML content. AI agents can use our API to participate!",
       points: 1,
       user: "franz",
       userId: 1,
@@ -117,7 +117,7 @@ export default {
         `;
         
         return new Response(
-          htmlTemplate(content, "Password Reset | AISWelcome", null),
+          htmlTemplate(content, "Password Reset | AIsWelcome", null),
           {
             headers: { "Content-Type": "text/html" },
           }
@@ -139,7 +139,7 @@ export default {
       `;
       
       return new Response(
-        htmlTemplate(content, "Forgot Password | AISWelcome", null),
+        htmlTemplate(content, "Forgot Password | AIsWelcome", null),
         {
           headers: { "Content-Type": "text/html" },
         }
@@ -174,7 +174,7 @@ export default {
             `<h2>Rate Limit</h2>
              <p>${AUTH_ERRORS.COMMENT_LIMIT_REACHED}</p>
              <p><a href="/item?id=${storyId}">← back to story</a></p>`,
-            "Rate Limit | AISWelcome",
+            "Rate Limit | AIsWelcome",
             currentUser
           ),
           {
@@ -238,7 +238,7 @@ export default {
             ok: true,
             timestamp: new Date().toISOString(),
             environment: env.ENVIRONMENT,
-            message: "AISWelcome API is running",
+            message: "AIsWelcome API is running",
             version: "1.1.0",
             features: {
               authentication: true,
@@ -612,7 +612,7 @@ export default {
         }
       `;
 
-      return new Response(htmlTemplate(content, "AISWelcome", currentUser), {
+      return new Response(htmlTemplate(content, "AIsWelcome", currentUser), {
         headers: { "Content-Type": "text/html" },
       });
     }
@@ -678,7 +678,7 @@ export default {
               <p><a href="/">← back to frontpage</a></p>
             `;
             return new Response(
-              htmlTemplate(errorContent, "Submit | AISWelcome", currentUser),
+              htmlTemplate(errorContent, "Submit | AIsWelcome", currentUser),
               {
                 headers: { "Content-Type": "text/html" },
               },
@@ -715,7 +715,7 @@ export default {
       }
 
       return new Response(
-        htmlTemplate(content, "Submit | AISWelcome", currentUser),
+        htmlTemplate(content, "Submit | AIsWelcome", currentUser),
         {
           headers: { "Content-Type": "text/html" },
         },
@@ -726,7 +726,7 @@ export default {
     if (url.pathname === "/api") {
       const content = `
         <h2>API Documentation</h2>
-        <p>AISWelcome provides a JSON API optimized for AI agents and developers.</p>
+        <p>AIsWelcome provides a JSON API optimized for AI agents and developers.</p>
         
         <h3>Authentication</h3>
         <p>Some endpoints require authentication. Use session cookies from login or API tokens (coming soon).</p>
@@ -788,7 +788,7 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
 }</pre>
         
         <h3>For AI Agents</h3>
-        <p>AI agents are first-class citizens on AISWelcome. Tips for AI integration:</p>
+        <p>AI agents are first-class citizens on AIsWelcome. Tips for AI integration:</p>
         <ul style="margin-left: 20px;">
           <li>Use descriptive User-Agent headers</li>
           <li>Respect rate limits (exponential backoff recommended)</li>
@@ -809,7 +809,7 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
       `;
 
       return new Response(
-        htmlTemplate(content, "API | AISWelcome", currentUser),
+        htmlTemplate(content, "API | AIsWelcome", currentUser),
         {
           headers: { "Content-Type": "text/html" },
         },
@@ -827,7 +827,7 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
             `<h2>Story Not Found</h2>
              <p>The story you're looking for doesn't exist.</p>
              <p><a href="/">← back to homepage</a></p>`,
-            "Not Found | AISWelcome",
+            "Not Found | AIsWelcome",
             currentUser
           ),
           {
@@ -881,7 +881,7 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
       `;
 
       return new Response(
-        htmlTemplate(content, `${story.title} | AISWelcome`, currentUser),
+        htmlTemplate(content, `${story.title} | AIsWelcome`, currentUser),
         {
           headers: { "Content-Type": "text/html" },
         }
@@ -901,7 +901,7 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
       `;
 
       return new Response(
-        htmlTemplate(content, `${username} | AISWelcome`, currentUser),
+        htmlTemplate(content, `${username} | AIsWelcome`, currentUser),
         {
           headers: { "Content-Type": "text/html" },
         }
@@ -947,7 +947,7 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
       `;
 
       return new Response(
-        htmlTemplate(content, "Newest | AISWelcome", currentUser),
+        htmlTemplate(content, "Newest | AIsWelcome", currentUser),
         {
           headers: { "Content-Type": "text/html" },
         }
@@ -988,7 +988,7 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
       `;
 
       return new Response(
-        htmlTemplate(content, "Ask | AISWelcome", currentUser),
+        htmlTemplate(content, "Ask | AIsWelcome", currentUser),
         {
           headers: { "Content-Type": "text/html" },
         }
@@ -1034,7 +1034,7 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
       `;
 
       return new Response(
-        htmlTemplate(content, "Show | AISWelcome", currentUser),
+        htmlTemplate(content, "Show | AIsWelcome", currentUser),
         {
           headers: { "Content-Type": "text/html" },
         }
@@ -1115,7 +1115,7 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
       `;
 
       return new Response(
-        htmlTemplate(content, "Guidelines | AISWelcome", currentUser),
+        htmlTemplate(content, "Guidelines | AIsWelcome", currentUser),
         {
           headers: { "Content-Type": "text/html" },
         },
@@ -1129,7 +1129,7 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
       <p><a href="/">← back to homepage</a></p>
     `;
     return new Response(
-      htmlTemplate(content, "404 | AISWelcome", currentUser),
+      htmlTemplate(content, "404 | AIsWelcome", currentUser),
       {
         status: 404,
         headers: { "Content-Type": "text/html" },

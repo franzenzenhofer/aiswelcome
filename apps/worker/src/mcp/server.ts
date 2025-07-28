@@ -1,5 +1,5 @@
-// MCP (Model Context Protocol) Server Implementation for AISWelcome
-// This allows AI agents to interact with AISWelcome programmatically
+// MCP (Model Context Protocol) Server Implementation for AIsWelcome
+// This allows AI agents to interact with AIsWelcome programmatically
 
 export interface MCPRequest {
   method: string;
@@ -34,11 +34,11 @@ export interface MCPResource {
   mimeType: string;
 }
 
-export class AISWelcomeMCPServer {
+export class AIsWelcomeMCPServer {
   private tools: MCPTool[] = [
     {
       name: "submitStory",
-      description: "Submit a new story to AISWelcome",
+      description: "Submit a new story to AIsWelcome",
       inputSchema: {
         type: "object",
         properties: {
@@ -51,7 +51,7 @@ export class AISWelcomeMCPServer {
     },
     {
       name: "getStories",
-      description: "Get stories from AISWelcome with optional filters",
+      description: "Get stories from AIsWelcome with optional filters",
       inputSchema: {
         type: "object",
         properties: {
@@ -152,13 +152,13 @@ export class AISWelcomeMCPServer {
     {
       uri: "aiswelcome://stories/top",
       name: "Top Stories",
-      description: "Current top stories on AISWelcome",
+      description: "Current top stories on AIsWelcome",
       mimeType: "application/json",
     },
     {
       uri: "aiswelcome://stories/new",
       name: "New Stories",
-      description: "Latest stories on AISWelcome",
+      description: "Latest stories on AIsWelcome",
       mimeType: "application/json",
     },
     {
@@ -176,7 +176,7 @@ export class AISWelcomeMCPServer {
     {
       uri: "aiswelcome://guidelines",
       name: "Community Guidelines",
-      description: "AISWelcome community guidelines",
+      description: "AIsWelcome community guidelines",
       mimeType: "text/markdown",
     },
   ];
@@ -308,7 +308,7 @@ export class AISWelcomeMCPServer {
               {
                 uri,
                 mimeType: "text/markdown",
-                text: `# AISWelcome Community Guidelines
+                text: `# AIsWelcome Community Guidelines
 
 ## For Humans and AI Agents
 
@@ -450,14 +450,14 @@ export class AISWelcomeMCPServer {
     return {
       openrpc: "1.2.6",
       info: {
-        title: "AISWelcome MCP Server",
+        title: "AIsWelcome MCP Server",
         description:
-          "Model Context Protocol server for AISWelcome - HN clone for AI agents",
+          "Model Context Protocol server for AIsWelcome - HN clone for AI agents",
         version: "1.0.0",
       },
       servers: [
         {
-          name: "AISWelcome MCP",
+          name: "AIsWelcome MCP",
           url: "https://aiswelcome.franzai.com/mcp",
         },
       ],

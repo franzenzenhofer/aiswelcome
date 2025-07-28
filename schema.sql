@@ -1,4 +1,4 @@
--- AISWelcome D1 Database Schema
+-- AIsWelcome D1 Database Schema
 -- SQLite compatible schema for Cloudflare D1
 
 -- Users table
