@@ -265,6 +265,64 @@ export default {
         );
       }
 
+      // API login endpoint
+      if (url.pathname === "/api/v1/login" && request.method === "POST") {
+        try {
+          const body = await request.json();
+          const { username, password } = body;
+
+          if (!username || !password) {
+            return new Response(
+              JSON.stringify({
+                ok: false,
+                error: "Username and password required",
+              }),
+              { status: 400, headers },
+            );
+          }
+
+          const authService = new AuthService(env);
+          const loginResult = await authService.login(username, password);
+
+          if (loginResult.success && loginResult.sessionId) {
+            // Set session cookie
+            return new Response(
+              JSON.stringify({
+                ok: true,
+                message: "Login successful",
+                user: {
+                  username: loginResult.user?.username,
+                  karma: loginResult.user?.karma,
+                },
+              }),
+              {
+                status: 200,
+                headers: {
+                  ...headers,
+                  "Set-Cookie": `aiswelcome_session=${loginResult.sessionId}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=86400`,
+                },
+              },
+            );
+          } else {
+            return new Response(
+              JSON.stringify({
+                ok: false,
+                error: "Invalid username or password",
+              }),
+              { status: 401, headers },
+            );
+          }
+        } catch (error) {
+          return new Response(
+            JSON.stringify({
+              ok: false,
+              error: "Invalid JSON in request body",
+            }),
+            { status: 400, headers },
+          );
+        }
+      }
+
       // Get stories
       if (url.pathname === "/api/v1/stories" && request.method === "GET") {
         const storiesData = await storage.getStories(1, 100, "top");
@@ -532,6 +590,7 @@ export default {
           error: "API endpoint not found",
           available_endpoints: [
             "GET /api/v1/health",
+            "POST /api/v1/login",
             "GET /api/v1/stories",
             "POST /api/v1/submit (auth required)",
             "POST /api/v1/comment (auth required)",
