@@ -158,9 +158,10 @@ export class D1Storage {
   ): Promise<Story[]> {
     const offset = (page - 1) * limit;
     let query = `
-      SELECT s.*, u.username 
+      SELECT s.*, u.username, COUNT(c.id) as comment_count
       FROM stories s
       JOIN users u ON s.user_id = u.id
+      LEFT JOIN comments c ON s.id = c.story_id AND c.is_deleted = false
       WHERE s.is_deleted = false
     `;
 
@@ -169,6 +170,8 @@ export class D1Storage {
     } else if (type === "show") {
       query += ` AND s.title LIKE 'Show AI:%'`;
     }
+
+    query += ` GROUP BY s.id, u.username`;
 
     if (type === "top") {
       query += ` ORDER BY s.points DESC, s.created_at DESC`;
