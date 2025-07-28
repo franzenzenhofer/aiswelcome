@@ -219,7 +219,7 @@ export class D1Storage {
     return true;
   }
 
-  async searchStories(query: string): Promise<Story[]> {
+  async searchStories(query: string, limit: number = 30): Promise<Story[]> {
     const results = await this.db.prepare(`
       SELECT s.*, u.username 
       FROM stories s
@@ -227,8 +227,8 @@ export class D1Storage {
       JOIN stories_fts ON stories_fts.rowid = s.id
       WHERE stories_fts MATCH ? AND s.is_deleted = false
       ORDER BY rank
-      LIMIT 30
-    `).bind(query).all();
+      LIMIT ?
+    `).bind(query, limit).all();
 
     return results.results.map((row: any) => ({
       ...row,
