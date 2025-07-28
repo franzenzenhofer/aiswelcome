@@ -14,8 +14,7 @@
   },
   "dependencies": {
     "@aiswelcome/shared": "workspace:*",
-    "@aiswelcome/logging": "workspace:*",
-    "hono": "^4.0.0"
+    "@aiswelcome/logging": "workspace:*"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.0.0",
