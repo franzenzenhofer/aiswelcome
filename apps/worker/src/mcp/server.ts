@@ -463,7 +463,7 @@ export class AIsWelcomeMCPServer {
             };
           }
           try {
-            const success = await storage.voteStory(user.id, args.id);
+            const success = await storage.voteStory(args.id, user.id);
             if (success) {
               const story = await storage.getStory(args.id);
               return {

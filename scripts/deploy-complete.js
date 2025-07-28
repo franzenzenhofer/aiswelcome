@@ -150,8 +150,8 @@ async function deploy() {
       });
       
       // Run the complete TDD tests
-      log.info('Running TDD tests for 100% coverage...');
-      exec('node scripts/test-complete-tdd.js', {
+      log.info('Running comprehensive TDD tests for 100% coverage...');
+      exec('node scripts/comprehensive-tests.cjs', {
         stdio: 'inherit',
         env: { ...process.env, TEST_URL: 'https://aiswelcome.franzai.com' }
       });
