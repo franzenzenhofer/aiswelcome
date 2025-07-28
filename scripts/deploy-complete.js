@@ -162,6 +162,84 @@ async function deploy() {
       log.error('This is unacceptable - fix all tests before deploying!');
       // Continue but warn loudly
     }
+    
+    // Step 5c: Deep verification of all URLs and features
+    log.section('Deep URL and Feature Verification');
+    log.info('Checking EVERY single URL and feature...');
+    
+    const urlChecks = [
+      { url: '/', desc: 'Homepage' },
+      { url: '/newest', desc: 'Newest stories' },
+      { url: '/ask', desc: 'Ask HN' },
+      { url: '/show', desc: 'Show HN' },
+      { url: '/submit', desc: 'Submit page' },
+      { url: '/login', desc: 'Login page' },
+      { url: '/register', desc: 'Register page' },
+      { url: '/forgot', desc: 'Password reset' },
+      { url: '/guidelines', desc: 'Guidelines' },
+      { url: '/api', desc: 'API documentation' },
+      { url: '/mcp', desc: 'MCP documentation' },
+      { url: '/user?id=franz', desc: 'User profile' },
+      { url: '/api/v1/health', desc: 'API health check' },
+      { url: '/api/v1/stories', desc: 'Stories API' },
+    ];
+    
+    let allUrlsPassed = true;
+    for (const check of urlChecks) {
+      try {
+        const response = await fetch(`https://aiswelcome.franzai.com${check.url}`);
+        if (response.ok || (check.url === '/submit' && response.status === 303)) {
+          log.success(`✅ ${check.desc} - Status ${response.status}`);
+        } else {
+          log.error(`❌ ${check.desc} - Status ${response.status}`);
+          allUrlsPassed = false;
+        }
+      } catch (error) {
+        log.error(`❌ ${check.desc} - Failed: ${error.message}`);
+        allUrlsPassed = false;
+      }
+    }
+    
+    // Test MCP server functionality
+    log.info('Testing MCP server...');
+    try {
+      const mcpInit = await fetch('https://aiswelcome.franzai.com/mcp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ method: 'initialize', id: 1 })
+      });
+      const mcpData = await mcpInit.json();
+      if (mcpData.result?.protocolVersion === '2025-06-18') {
+        log.success('✅ MCP server initialized correctly');
+        
+        // Test tools list
+        const toolsList = await fetch('https://aiswelcome.franzai.com/mcp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ method: 'tools/list', id: 2 })
+        });
+        const toolsData = await toolsList.json();
+        if (toolsData.result?.tools?.length === 8) {
+          log.success('✅ MCP has all 8 tools');
+        } else {
+          log.error('❌ MCP tools count mismatch');
+          allUrlsPassed = false;
+        }
+      } else {
+        log.error('❌ MCP initialization failed');
+        allUrlsPassed = false;
+      }
+    } catch (error) {
+      log.error(`❌ MCP test failed: ${error.message}`);
+      allUrlsPassed = false;
+    }
+    
+    if (!allUrlsPassed) {
+      log.error('Some URLs or features are not working correctly!');
+      log.error('DEPLOYMENT IS NOT 100% - FIX IMMEDIATELY!');
+    } else {
+      log.success('ALL URLs and features verified successfully! 100% working!');
+    }
 
     // Step 5c: Verify Cloudflare stack
     log.section('Verifying 100% Cloudflare Stack');

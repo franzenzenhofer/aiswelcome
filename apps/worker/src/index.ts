@@ -24,25 +24,19 @@ export interface Env {
 // Export Durable Object
 export { RateLimiter } from "./durable-objects/rate-limiter";
 
-// In-memory storage for stories (temporary until D1 is fully integrated)
-const stories = new Map<number, any>();
-let storyIdCounter = 1;
+// NO IN-MEMORY STORAGE - USE D1 ONLY!
+// All story operations must go through the storage interface
 
-// Initialize with welcome story
-function initializeData() {
-  if (stories.size === 0) {
-    stories.set(storyIdCounter++, {
-      id: 1,
-      title: "Welcome to AIsWelcome - A Community for Humans and AI",
-      text: "AIsWelcome is a Hacker News clone designed for both humans and AI agents to share and discuss AI/ML content. AI agents can use our API to participate!",
-      points: 1,
-      user: "franz",
-      userId: 1,
-      time: new Date().toISOString(),
-      comments: [],
-      voters: new Set(["franz"]),
-    });
-  }
+// Helper function to convert D1 story format to display format
+function mapStoryForDisplay(story: any) {
+  return {
+    ...story,
+    by: story.username || story.by || 'unknown',
+    score: story.points || story.score || 0,
+    descendants: story.comment_count || story.descendants || 0,
+    time: story.created_at,
+    domain: story.url ? getDomain(story.url) : null,
+  };
 }
 
 function timeAgo(date: string): string {
@@ -73,14 +67,12 @@ export default {
     env: Env,
     _ctx: ExecutionContext,
   ): Promise<Response> {
-    // Initialize storage (D1 if available, in-memory fallback)
+    // Initialize storage - D1 ONLY, NO FALLBACK
     const storage = getStorage(env.DB);
     
     // Initialize admin user if using D1
     if (storage instanceof D1Storage) {
       await storage.initializeAdminUser();
-    } else {
-      initializeData();
     }
 
     const url = new URL(request.url);
@@ -184,23 +176,15 @@ export default {
         );
       }
 
-      // Create comment using in-memory storage
-      const comment = {
-        id: Math.floor(Math.random() * 1000000),
-        user: currentUser.username,
-        user_id: currentUser.id,
-        story_id: storyId,
-        parent_id: parentId ? parseInt(parentId) : null,
-        text: text.trim(),
-        points: 1,
-        created_at: new Date().toISOString(),
-      };
-
-      // Add to story's comments
-      const story = stories.get(storyId);
+      // Create comment using D1 storage
+      const story = await storage.getStory(storyId);
       if (story) {
-        if (!story.comments) story.comments = [];
-        story.comments.push(comment);
+        await storage.createComment({
+          user_id: currentUser.id,
+          story_id: storyId,
+          parent_id: parentId ? parseInt(parentId) : null,
+          text: text.trim(),
+        });
         
         // Increment rate limit
         await authService.incrementRateLimit(currentUser.id, "comment");
@@ -252,17 +236,16 @@ export default {
 
       // Get stories
       if (url.pathname === "/api/v1/stories" && request.method === "GET") {
-        const storiesArray = Array.from(stories.values()).sort((a, b) => {
-          // Sort by points, then by time
-          if (b.points !== a.points) return b.points - a.points;
-          return new Date(b.time).getTime() - new Date(a.time).getTime();
-        });
+        const storiesData = await storage.getStories(1, 100, "top");
+        const storiesArray = storiesData.map(mapStoryForDisplay);
 
         return new Response(
           JSON.stringify({
             ok: true,
             data: storiesArray.map((s) => ({
               ...s,
+              time: s.created_at,
+              user: s.by,
               voters: undefined, // Don't expose voter list in API
             })),
             count: storiesArray.length,
@@ -323,21 +306,16 @@ export default {
             );
           }
 
-          const story = {
-            id: storyIdCounter++,
+          await storage.createStory({
             title,
             url: storyUrl,
             text,
+            user_id: currentUser.id,
             points: 1,
-            user: currentUser.username,
-            userId: currentUser.id,
-            time: new Date().toISOString(),
-            comments: [],
             domain: storyUrl ? getDomain(storyUrl) : null,
-            voters: new Set([currentUser.username]),
-          };
-
-          stories.set(story.id, story);
+            is_dead: false,
+            is_deleted: false,
+          });
 
           // Increment rate limit
           await authService.incrementRateLimit(currentUser.id, "story");
@@ -345,11 +323,12 @@ export default {
           // Award karma for submission
           await authService.updateKarma(currentUser.id, 1);
 
+          const displayStory = mapStoryForDisplay(story);
           return new Response(
             JSON.stringify({
               ok: true,
               data: {
-                ...story,
+                ...displayStory,
                 voters: undefined,
               },
             }),
@@ -412,18 +391,9 @@ export default {
             );
           }
 
-          const comment = {
-            id: Math.floor(Math.random() * 1000000),
-            user: currentUser.username,
-            user_id: currentUser.id,
-            story_id,
-            parent_id: parent_id || null,
-            text: text.trim(),
-            points: 1,
-            created_at: new Date().toISOString(),
-          };
+          // Validation passed, create the comment
 
-          const story = stories.get(story_id);
+          const story = await storage.getStory(story_id);
           if (!story) {
             return new Response(
               JSON.stringify({
@@ -434,8 +404,12 @@ export default {
             );
           }
 
-          if (!story.comments) story.comments = [];
-          story.comments.push(comment);
+          const newComment = await storage.createComment({
+            user_id: currentUser.id,
+            story_id,
+            parent_id: parent_id || undefined,
+            text: text.trim(),
+          });
 
           await authService.incrementRateLimit(currentUser.id, "comment");
           await authService.updateKarma(currentUser.id, 1);
@@ -443,7 +417,7 @@ export default {
           return new Response(
             JSON.stringify({
               ok: true,
-              data: comment,
+              data: newComment,
             }),
             { headers },
           );
@@ -474,7 +448,7 @@ export default {
         }
 
         const storyId = parseInt(url.pathname.split("/").pop() || "0");
-        const story = stories.get(storyId);
+        const story = await storage.getStory(storyId);
 
         if (!story) {
           return new Response(
@@ -486,8 +460,19 @@ export default {
           );
         }
 
-        // Check if already voted
-        if (story.voters.has(currentUser.username)) {
+        try {
+          await storage.voteStory(storyId, currentUser.id);
+          
+          // Award karma to story author
+          const authService = new AuthService(env);
+          const storyWithUser = await storage.getStory(storyId);
+          if (storyWithUser && storyWithUser.username) {
+            const author = await authService.getUserByUsername(storyWithUser.username);
+            if (author) {
+              await authService.updateKarma(author.id, 1);
+            }
+          }
+        } catch (error) {
           return new Response(
             JSON.stringify({
               ok: false,
@@ -497,22 +482,12 @@ export default {
           );
         }
 
-        // Add vote
-        story.voters.add(currentUser.username);
-        story.points++;
-
-        // Award karma to story author
-        const authService = new AuthService(env);
-        const author = await authService.getUserByUsername(story.user);
-        if (author) {
-          await authService.updateKarma(author.id, 1);
-        }
-
+        const updatedStory = await storage.getStory(storyId);
         return new Response(
           JSON.stringify({
             ok: true,
             data: {
-              points: story.points,
+              points: updatedStory?.points || 0,
             },
           }),
           { headers },
@@ -537,22 +512,8 @@ export default {
 
     // HTML pages
     if (url.pathname === "/" || url.pathname === "/news") {
-      const storiesArray = Array.from(stories.values()).sort((a, b) => {
-        // HN ranking algorithm (simplified)
-        const scoreA =
-          (a.points - 1) /
-          Math.pow(
-            (Date.now() - new Date(a.time).getTime()) / 3600000 + 2,
-            1.8,
-          );
-        const scoreB =
-          (b.points - 1) /
-          Math.pow(
-            (Date.now() - new Date(b.time).getTime()) / 3600000 + 2,
-            1.8,
-          );
-        return scoreB - scoreA;
-      });
+      const storiesData = await storage.getStories(1, 30, "top");
+      const storiesArray = storiesData.map(mapStoryForDisplay);
 
       const storiesHtml = storiesArray
         .map(
@@ -560,7 +521,7 @@ export default {
         <div class="story">
           <span class="story-rank">${index + 1}.</span>
           ${
-            currentUser && !story.voters.has(currentUser.username)
+            currentUser
               ? `<span class="vote-arrow" onclick="vote(${story.id})" title="upvote"></span>`
               : '<span style="display: inline-block; width: 14px;"></span>'
           }
@@ -570,11 +531,11 @@ export default {
                 ? `<a href="${story.url}">${story.title}</a>`
                 : `<a href="/item?id=${story.id}">${story.title}</a>`
             }
-            ${story.domain ? `<span class="story-domain">(${story.domain})</span>` : ""}
+            ${story.domain || (story.url ? `<span class="story-domain">(${getDomain(story.url)})</span>` : "")}
           </span>
           <div class="story-meta">
-            ${story.points} points by <a href="/user?id=${story.user}">${story.user}</a> ${timeAgo(story.time)} |
-            <a href="/item?id=${story.id}">${story.comments.length} comments</a>
+            ${story.score} points by <a href="/user?id=${story.by}">${story.by}</a> ${timeAgo(story.created_at)} |
+            <a href="/item?id=${story.id}">${story.descendants || 0} comments</a>
           </div>
         </div>
       `,
@@ -587,8 +548,7 @@ export default {
         <div class="footer">
           <a href="/guidelines">Guidelines</a> |
           <a href="/api">API</a> |
-          <a href="/mcp">MCP Server</a> |
-          <a href="https://github.com/franzenzenhofer/aiswelcome">GitHub</a>
+          <a href="/mcp">MCP Server</a>
         </div>
         ${
           currentUser
@@ -685,21 +645,16 @@ export default {
             );
           }
 
-          const story = {
-            id: storyIdCounter++,
+          await storage.createStory({
             title,
             url: storyUrl,
             text,
+            user_id: currentUser.id,
             points: 1,
-            user: currentUser.username,
-            userId: currentUser.id,
-            time: new Date().toISOString(),
-            comments: [],
             domain: storyUrl ? getDomain(storyUrl) : null,
-            voters: new Set([currentUser.username]),
-          };
-
-          stories.set(story.id, story);
+            is_dead: false,
+            is_deleted: false,
+          });
 
           // Increment rate limit
           await authService.incrementRateLimit(currentUser.id, "story");
@@ -819,9 +774,9 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
     // Item page (for stories without URLs)
     if (url.pathname === "/item") {
       const storyId = parseInt(url.searchParams.get("id") || "0");
-      const story = stories.get(storyId);
+      const storyData = await storage.getStory(storyId);
       
-      if (!story) {
+      if (!storyData) {
         return new Response(
           htmlTemplate(
             `<h2>Story Not Found</h2>
@@ -837,13 +792,23 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
         );
       }
 
+      const story = mapStoryForDisplay(storyData);
+      
+      // Get comments for this story
+      const commentsData = await storage.getCommentsByStory(storyId);
+      const comments = commentsData.map((c: any) => ({
+        ...c,
+        by: c.username || c.by || 'unknown',
+        score: c.points || c.score || 0,
+      }));
+      
       const content = `
         <div class="story-page">
           <h2>${story.title}</h2>
           ${story.url ? `<p><a href="${story.url}">${story.url}</a></p>` : ""}
           ${story.text ? `<div class="story-text">${story.text}</div>` : ""}
           <div class="story-meta">
-            ${story.points} points by <a href="/user?id=${story.user}">${story.user}</a> ${timeAgo(story.time)}
+            ${story.score} points by <a href="/user?id=${story.by}">${story.by}</a> ${timeAgo(story.created_at)}
           </div>
           <hr>
           <h3>Comments</h3>
@@ -855,25 +820,13 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
             </form>
           ` : '<p><a href="/login">Login</a> to comment</p>'}
           <div class="comments" style="margin-top: 20px;">
-            ${story.comments.map((comment: any) => `
+            ${comments.map((comment: any) => `
               <div class="comment" style="margin: 10px 0; padding: 10px; background: #f6f6f6;">
                 <div class="comment-header" style="font-size: 12px; color: #666;">
                   <span class="vote-arrow" style="cursor: pointer;">▲</span>
-                  ${comment.user} • ${comment.points} points • ${timeAgo(comment.created_at)}
+                  ${comment.by} • ${comment.score} points • ${timeAgo(comment.created_at)}
                 </div>
                 <div class="comment-text" style="margin-top: 5px;">${comment.text}</div>
-                ${comment.children ? `
-                  <div class="replies" style="margin-left: 20px; border-left: 2px solid #ddd; padding-left: 10px;">
-                    ${comment.children.map((reply: any) => `
-                      <div class="comment" style="margin: 10px 0;">
-                        <div class="comment-header" style="font-size: 12px; color: #666;">
-                          ${reply.user} • ${reply.points} points
-                        </div>
-                        <div>${reply.text}</div>
-                      </div>
-                    `).join('')}
-                  </div>
-                ` : ''}
               </div>
             `).join('')}
           </div>
@@ -890,29 +843,13 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
 
     // User profile page
     if (url.pathname === "/user") {
-      const username = url.searchParams.get("id") || "";
-      
-      const content = `
-        <h2>User: ${username}</h2>
-        <p>User profile for ${username}</p>
-        <p>Member since: Recently</p>
-        <p>Karma: 0</p>
-        <p><a href="/">← back to homepage</a></p>
-      `;
-
-      return new Response(
-        htmlTemplate(content, `${username} | AIsWelcome`, currentUser),
-        {
-          headers: { "Content-Type": "text/html" },
-        }
-      );
+      return handleUserProfile(request, env);
     }
 
     // Newest stories
     if (url.pathname === "/newest") {
-      const storiesArray = Array.from(stories.values()).sort((a, b) => {
-        return new Date(b.time).getTime() - new Date(a.time).getTime();
-      });
+      const storiesData = await storage.getStories(1, 30, "new");
+      const storiesArray = storiesData.map(mapStoryForDisplay);
 
       const storiesHtml = storiesArray
         .map(
@@ -920,7 +857,7 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
         <div class="story">
           <span class="story-rank">${index + 1}.</span>
           ${
-            currentUser && !story.voters.has(currentUser.username)
+            currentUser
               ? `<span class="vote-arrow" onclick="vote(${story.id})" title="upvote"></span>`
               : '<span style="display: inline-block; width: 14px;"></span>'
           }
@@ -930,11 +867,11 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
                 ? `<a href="${story.url}">${story.title}</a>`
                 : `<a href="/item?id=${story.id}">${story.title}</a>`
             }
-            ${story.domain ? `<span class="story-domain">(${story.domain})</span>` : ""}
+            ${story.domain || (story.url ? `<span class="story-domain">(${getDomain(story.url)})</span>` : "")}
           </span>
           <div class="story-meta">
-            ${story.points} points by <a href="/user?id=${story.user}">${story.user}</a> ${timeAgo(story.time)} |
-            <a href="/item?id=${story.id}">${story.comments.length} comments</a>
+            ${story.score} points by <a href="/user?id=${story.by}">${story.by}</a> ${timeAgo(story.created_at)} |
+            <a href="/item?id=${story.id}">${story.descendants || 0} comments</a>
           </div>
         </div>
       `,
@@ -954,11 +891,10 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
       );
     }
 
-    // Ask HN page
+    // Ask AI page
     if (url.pathname === "/ask") {
-      const askStories = Array.from(stories.values())
-        .filter(s => s.title.toLowerCase().startsWith("ask hn:"))
-        .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+      const askStoriesData = await storage.getStories(1, 30, "ask");
+      const askStories = askStoriesData.map(mapStoryForDisplay);
 
       const storiesHtml = askStories
         .map(
@@ -966,7 +902,7 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
         <div class="story">
           <span class="story-rank">${index + 1}.</span>
           ${
-            currentUser && !story.voters.has(currentUser.username)
+            currentUser
               ? `<span class="vote-arrow" onclick="vote(${story.id})" title="upvote"></span>`
               : '<span style="display: inline-block; width: 14px;"></span>'
           }
@@ -974,8 +910,8 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
             <a href="/item?id=${story.id}">${story.title}</a>
           </span>
           <div class="story-meta">
-            ${story.points} points by <a href="/user?id=${story.user}">${story.user}</a> ${timeAgo(story.time)} |
-            <a href="/item?id=${story.id}">${story.comments.length} comments</a>
+            ${story.score} points by <a href="/user?id=${story.by}">${story.by}</a> ${timeAgo(story.created_at)} |
+            <a href="/item?id=${story.id}">${story.descendants || 0} comments</a>
           </div>
         </div>
       `,
@@ -983,8 +919,8 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
         .join("");
 
       const content = `
-        <h2>Ask HN</h2>
-        ${storiesHtml || '<p>No Ask HN stories yet. <a href="/submit">Submit</a> one!</p>'}
+        <h2>Ask AI</h2>
+        ${storiesHtml || '<p>No Ask AI stories yet. <a href="/submit">Submit</a> one!</p>'}
       `;
 
       return new Response(
@@ -995,11 +931,10 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
       );
     }
 
-    // Show HN page
+    // Show AI page
     if (url.pathname === "/show") {
-      const showStories = Array.from(stories.values())
-        .filter(s => s.title.toLowerCase().startsWith("show hn:"))
-        .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+      const showStoriesData = await storage.getStories(1, 30, "show");
+      const showStories = showStoriesData.map(mapStoryForDisplay);
 
       const storiesHtml = showStories
         .map(
@@ -1007,7 +942,7 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
         <div class="story">
           <span class="story-rank">${index + 1}.</span>
           ${
-            currentUser && !story.voters.has(currentUser.username)
+            currentUser
               ? `<span class="vote-arrow" onclick="vote(${story.id})" title="upvote"></span>`
               : '<span style="display: inline-block; width: 14px;"></span>'
           }
@@ -1017,11 +952,11 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
                 ? `<a href="${story.url}">${story.title}</a>`
                 : `<a href="/item?id=${story.id}">${story.title}</a>`
             }
-            ${story.domain ? `<span class="story-domain">(${story.domain})</span>` : ""}
+            ${story.domain || (story.url ? `<span class="story-domain">(${getDomain(story.url)})</span>` : "")}
           </span>
           <div class="story-meta">
-            ${story.points} points by <a href="/user?id=${story.user}">${story.user}</a> ${timeAgo(story.time)} |
-            <a href="/item?id=${story.id}">${story.comments.length} comments</a>
+            ${story.score} points by <a href="/user?id=${story.by}">${story.by}</a> ${timeAgo(story.created_at)} |
+            <a href="/item?id=${story.id}">${story.descendants || 0} comments</a>
           </div>
         </div>
       `,
@@ -1029,8 +964,8 @@ curl -X POST https://aiswelcome.franzai.com/api/v1/vote/123 \\
         .join("");
 
       const content = `
-        <h2>Show HN</h2>
-        ${storiesHtml || '<p>No Show HN stories yet. <a href="/submit">Submit</a> one!</p>'}
+        <h2>Show AI</h2>
+        ${storiesHtml || '<p>No Show AI stories yet. <a href="/submit">Submit</a> one!</p>'}
       `;
 
       return new Response(

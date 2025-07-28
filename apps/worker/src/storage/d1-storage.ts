@@ -7,14 +7,14 @@ import {
   Session,
   RateLimit,
 } from "../types";
-import { storage } from "./inmemory";
+// Removed singleton import - D1Storage is independent
 
 export class D1Storage {
   constructor(private db: D1Database) {}
 
   // User operations
   async createUser(user: Omit<User, "id" | "created_at">): Promise<User> {
-    const id = storage.generateId();
+    const id = Math.floor(Math.random() * 1000000000);
     const createdAt = Math.floor(Date.now() / 1000);
     
     await this.db.prepare(`
@@ -98,7 +98,7 @@ export class D1Storage {
 
   // Story operations
   async createStory(story: Omit<Story, "id" | "created_at">): Promise<Story> {
-    const id = storage.generateId();
+    const id = Math.floor(Math.random() * 1000000000);
     const createdAt = Math.floor(Date.now() / 1000);
     
     await this.db.prepare(`
@@ -154,9 +154,9 @@ export class D1Storage {
     `;
 
     if (type === "ask") {
-      query += ` AND s.title LIKE 'Ask HN:%'`;
+      query += ` AND s.title LIKE 'Ask AI:%'`;
     } else if (type === "show") {
-      query += ` AND s.title LIKE 'Show HN:%'`;
+      query += ` AND s.title LIKE 'Show AI:%'`;
     }
 
     if (type === "top") {
@@ -183,6 +183,27 @@ export class D1Storage {
     `).bind(delta, storyId).run();
   }
 
+  async voteStory(storyId: number, userId: number): Promise<boolean> {
+    // Check if already voted
+    const existingVote = await this.getVote(userId, storyId, "story");
+    if (existingVote) {
+      return false; // Already voted
+    }
+
+    // Create vote record
+    await this.createVote({
+      user_id: userId,
+      item_id: storyId,
+      item_type: "story",
+      vote_type: "up",
+    });
+
+    // Update story points
+    await this.updateStoryPoints(storyId, 1);
+
+    return true;
+  }
+
   async searchStories(query: string): Promise<Story[]> {
     const results = await this.db.prepare(`
       SELECT s.*, u.username 
@@ -202,7 +223,7 @@ export class D1Storage {
 
   // Comment operations
   async createComment(comment: Omit<Comment, "id" | "created_at">): Promise<Comment> {
-    const id = storage.generateId();
+    const id = Math.floor(Math.random() * 1000000000);
     const createdAt = Math.floor(Date.now() / 1000);
     
     await this.db.prepare(`
@@ -313,7 +334,7 @@ export class D1Storage {
 
   // Helper methods for compatibility
   generateId(): number {
-    return storage.generateId();
+    return Math.floor(Math.random() * 1000000000);
   }
   
   // Rate limit methods matching in-memory interface  

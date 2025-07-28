@@ -33,7 +33,7 @@ export class AuthService {
     if (env?.SESSIONS) {
       this.kvSessions = new KVSessionStorage(env.SESSIONS);
     }
-    this.storage = getStorage(env?.DB);
+    this.storage = getStorage(env?.DB!);
   }
   async register(
     username: string,

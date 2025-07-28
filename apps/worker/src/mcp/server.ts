@@ -164,13 +164,13 @@ export class AIsWelcomeMCPServer {
     {
       uri: "aiswelcome://stories/ask",
       name: "Ask Stories",
-      description: "Ask HN style questions",
+      description: "Ask AI style questions",
       mimeType: "application/json",
     },
     {
       uri: "aiswelcome://stories/show",
       name: "Show Stories",
-      description: "Show HN style posts",
+      description: "Show AI style posts",
       mimeType: "application/json",
     },
     {
