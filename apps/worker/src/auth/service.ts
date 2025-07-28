@@ -166,14 +166,14 @@ export class AuthService {
 
     if (
       type === "story" &&
-      limit.story_count >= AUTH_CONFIG.MAX_STORIES_PER_DAY
+      limit.stories >= AUTH_CONFIG.MAX_STORIES_PER_DAY
     ) {
       return false;
     }
 
     if (
       type === "comment" &&
-      limit.comment_count >= AUTH_CONFIG.MAX_COMMENTS_PER_DAY
+      limit.comments >= AUTH_CONFIG.MAX_COMMENTS_PER_DAY
     ) {
       return false;
     }
