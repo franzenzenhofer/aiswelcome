@@ -581,7 +581,7 @@ export class AIsWelcomeMCPServer {
 
         case "getComments":
           try {
-            const comments = await storage.getComments(args.storyId);
+            const comments = await storage.getCommentsByStory(args.storyId);
             return {
               result: {
                 comments: comments.map((comment: any) => ({
