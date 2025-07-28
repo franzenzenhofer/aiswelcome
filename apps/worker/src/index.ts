@@ -577,7 +577,68 @@ export default {
       });
     }
 
-    if (url.pathname === "/submit") {
+    // Handle submit form POST
+    if (url.pathname === "/submit" && request.method === "POST") {
+      if (!currentUser) {
+        return Response.redirect(
+          new URL("/login?goto=/submit", url).toString(),
+          303,
+        );
+      }
+
+      const formData = await request.formData();
+      const title = formData.get("title")?.toString();
+      const storyUrl = formData.get("url")?.toString();
+      const text = formData.get("text")?.toString();
+
+      if (title) {
+        // Check rate limit
+        const authService = new AuthService(env);
+        const canSubmit = await authService.checkRateLimit(
+          currentUser.id,
+          "story",
+        );
+
+        if (!canSubmit) {
+          const errorContent = `
+            <h2>Submit</h2>
+            <div class="message error">${AUTH_ERRORS.STORY_LIMIT_REACHED}</div>
+            <p><a href="/">← back to frontpage</a></p>
+          `;
+          return new Response(
+            htmlTemplate(errorContent, "Submit | AIsWelcome", currentUser),
+            {
+              headers: { "Content-Type": "text/html" },
+            },
+          );
+        }
+
+        await storage.createStory({
+          title,
+          url: storyUrl,
+          text,
+          user_id: currentUser.id,
+          points: 1,
+          domain: storyUrl ? getDomain(storyUrl) : null,
+          is_dead: false,
+          is_deleted: false,
+        });
+
+        // Increment rate limit
+        await authService.incrementRateLimit(currentUser.id, "story");
+
+        // Award karma
+        await authService.updateKarma(currentUser.id, 1);
+
+        return Response.redirect(
+          new URL("/submit?message=success", url).toString(),
+          303,
+        );
+      }
+    }
+
+    // Handle submit form GET
+    if (url.pathname === "/submit" && request.method === "GET") {
       if (!currentUser) {
         return Response.redirect(
           new URL("/login?goto=/submit", url).toString(),
@@ -615,59 +676,6 @@ export default {
           </p>
         </form>
       `;
-
-      // Handle form submission
-      if (request.method === "POST") {
-        const formData = await request.formData();
-        const title = formData.get("title")?.toString();
-        const storyUrl = formData.get("url")?.toString();
-        const text = formData.get("text")?.toString();
-
-        if (title) {
-          // Check rate limit
-          const authService = new AuthService(env);
-          const canSubmit = await authService.checkRateLimit(
-            currentUser.id,
-            "story",
-          );
-
-          if (!canSubmit) {
-            const errorContent = `
-              <h2>Submit</h2>
-              <div class="message error">${AUTH_ERRORS.STORY_LIMIT_REACHED}</div>
-              <p><a href="/">← back to frontpage</a></p>
-            `;
-            return new Response(
-              htmlTemplate(errorContent, "Submit | AIsWelcome", currentUser),
-              {
-                headers: { "Content-Type": "text/html" },
-              },
-            );
-          }
-
-          await storage.createStory({
-            title,
-            url: storyUrl,
-            text,
-            user_id: currentUser.id,
-            points: 1,
-            domain: storyUrl ? getDomain(storyUrl) : null,
-            is_dead: false,
-            is_deleted: false,
-          });
-
-          // Increment rate limit
-          await authService.incrementRateLimit(currentUser.id, "story");
-
-          // Award karma
-          await authService.updateKarma(currentUser.id, 1);
-
-          return Response.redirect(
-            new URL("/submit?message=success", url).toString(),
-            303,
-          );
-        }
-      }
 
       return new Response(
         htmlTemplate(content, "Submit | AIsWelcome", currentUser),
